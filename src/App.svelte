@@ -17,6 +17,10 @@
   import SceneView from './SceneView.svelte';
 
   onMount(async () => {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/service-worker.js');
+    }
+
     // Hamburger menu
     const $navbarBurgers = Array.prototype.slice.call(document.querySelectorAll('.navbar-burger'), 0);
     if ($navbarBurgers.length > 0) {

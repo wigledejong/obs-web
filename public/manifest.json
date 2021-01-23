@@ -1,4 +1,10 @@
 {
+  "display": "standalone",
+  "orientation": "landscape",
+  "scope": "/",
+  "start_url": "/",
+  "description": "Hillegondakerk stream app - Based on OBS-Web by Niek ",
+  "prefer_related_applications": false,
   "short_name": "Hillegondakerk stream app",
   "name": "Hillegondakerk stream app",
   "icons": [
@@ -12,8 +18,5 @@
       "sizes":"175x175",
       "type": "image/png"
     }
-  ],
-  "start_url": "/index.html",
-  "display": "standalone",
-  "orientation": "landscape"
+  ]
 }
