@@ -1,29 +1,26 @@
-# OBS-web
+# Hillegondakerkstream
 
-<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-8-orange.svg?style=flat-square)](#contributors-)
-<!-- ALL-CONTRIBUTORS-BADGE:END -->
-
-#### The easiest way to control [OBS](https://obsproject.com/) remotely
-
-### **URL: http://obs-web.niek.tv/**
+#### WebApp to control [OBS](https://obsproject.com/) remotely for the Hillegondakerk
 
 ###### Download latest build [here](https://github.com/Niek/obs-web/archive/gh-pages.zip)
 
+Based on https://github.com/Niek/obs-web/
 ---
 
 #### Screenshot:
 
-![Screenshot of OBS-web](.github/screenshot.png)
+![Screenshot of OBS-web](screenshot_app.png)
 
 #### Features:
 
 - No installation needed, works in any modern browser (desktop + mobile)
 - Support for remote control through [WSS tunnels](https://github.com/Palakis/obs-websocket/blob/4.x-current/SSL-TUNNELLING.md)
-- Easily switch scenes and start/stop streaming and recording
+- Easily switch scenes and start/stop streaming
+- Easily switch between scene collections
+- Easily mute audio
+- Easily display next slide  
 - Support for Studio Mode (preview and program scenes)
 - Preview of output, updating continuously
-- Fullscreen button and wakelock support
 - Easy bookmarking/deeplink by specifying host in URL
 - Hide scenes that have `(hidden)` in their name
 
@@ -43,7 +40,6 @@
 npm i
 npm run dev # or: npm run build
 ```
-
 ## Contributors ✨
 
 Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/docs/en/emoji-key)):
