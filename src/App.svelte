@@ -4,9 +4,10 @@
   // Imports
   import { onMount } from 'svelte';
   import './style.scss';
-  import { mdiFullscreen, mdiFullscreenExit, mdiBorderVertical, mdiArrowSplitHorizontal, mdiAccessPoint, mdiAccessPointOff, mdiRecord, mdiStop, mdiPause, mdiPlayPause } from '@mdi/js';
+  import { mdiCommentTextOutline, mdiSpeakerOff, mdiSpeaker, mdiBorderVertical, mdiAccessPoint, mdiAccessPointOff, mdiRecord, mdiStop, mdiCheckboxMarked, mdiAlert, mdiCloseOctagon} from '@mdi/js';
   import Icon from 'mdi-svelte';
   import compareVersions from 'compare-versions';
+  import * as obsConfig from './config.json';
 
   // Import OBS-websocket
   import OBSWebSocket from 'obs-websocket-js';
@@ -16,37 +17,6 @@
   import SceneView from './SceneView.svelte';
 
   onMount(async () => {
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/service-worker.js');
-    }
-
-    // Request screen wakelock
-    if ('wakeLock' in navigator) {
-      try {
-        wakeLock = await navigator.wakeLock.request('screen');
-          // Re-request when coming back
-          document.addEventListener('visibilitychange', async () => {
-            if (document.visibilityState === 'visible') {
-              wakeLock = await navigator.wakeLock.request('screen');
-            }
-          });
-      }
-      catch(e) { }
-    }
-
-    // Listen for fullscreen changes
-    document.addEventListener('fullscreenchange', () => {
-      isFullScreen = document.fullscreenElement;
-    });
-
-    document.addEventListener('webkitfullscreenchange', () => {
-      isFullScreen = document.webkitFullscreenElement;
-    });
-
-    document.addEventListener('msfullscreenchange', () => {
-      isFullScreen = document.msFullscreenElement;
-    });
-
     // Hamburger menu
     const $navbarBurgers = Array.prototype.slice.call(document.querySelectorAll('.navbar-burger'), 0);
     if ($navbarBurgers.length > 0) {
@@ -59,57 +29,68 @@
       });
     }
 
-    if (document.location.hash !== '') {
+    // Connect with parameters in config.json
+    host = `${obsConfig.host}`;
+    password = `${obsConfig.password}`;
+    configuredStreamBitrate = `${obsConfig.configuredStreamBitrate}`;
+    beginDienst = `${obsConfig.beginDienst}`;
+    audioDevice = `${obsConfig.audioDevice}`;
+    screenSizeX = `${obsConfig.screenSizeX}`;
+    screenSizeY = `${obsConfig.screenSizeY}`;
+    await connect();
+
+    if (document.location.hash != '') {
       // Read host from hash
       host = document.location.hash.slice(1);
       await connect();
     }
+
+    // Dropdown menu
+    const $dropdown = document.querySelector('.has-dropdown');
+    if ( $dropdown != null){
+      $dropdown.addEventListener('click', () => {
+        $dropdown.classList.toggle('is-active');
+      });
+    }
+
   });
 
   // State
   let connected,
     heartbeat,
+    streamStatus,
     currentScene,
     currentPreviewScene,
-    isFullScreen,
+    currentSceneCollection,
     isStudioMode,
-    isSceneOnTop,
-    wakeLock = false;
-  let scenes = [];
+    isLiturgieMode,
+    isMuted,
+    wakeLock,
+    previewClass = false;
+  let scenes =[];
+  let scenesList = [];
+  let configuredStreamBitrate,
+    streamBitrate,
+    screenSizeX,
+    screenSizeY,
+    bitrateStatus= 0;
   let host,
     password,
-    errorMessage = '';
+    errorMessage,
+    audioDevice,
+    beginDienst = '';
   $: sceneChunks = Array(Math.ceil(scenes.length / 4))
     .fill()
     .map((_, index) => index * 4)
     .map(begin => scenes.slice(begin, begin + 4));
 
-  function toggleFullScreen() {
-    if (isFullScreen) {
-      if (document.exitFullscreen) {
-        document.exitFullscreen();
-      } else if (document.webkitExitFullscreen) {
-        document.webkitExitFullscreen();
-      } else if (document.msExitFullscreen) {
-        document.msExitFullscreen();
-      }
-    } else {
-      if (document.documentElement.requestFullscreen) {
-        document.documentElement.requestFullscreen();
-      } else if (document.documentElement.webkitRequestFullscreen) {
-        document.documentElement.webkitRequestFullscreen();
-      } else if (document.documentElement.msRequestFullscreen) {
-        document.documentElement.msRequestFullscreen();
-      }
-    }
+
+  function toggleLiturgieMode() {
+    isLiturgieMode = !isLiturgieMode;
   }
 
   async function toggleStudioMode() {
     await sendCommand('ToggleStudioMode');
-  }
-
-  async function switchSceneView() {
-    isSceneOnTop = !isSceneOnTop;
   }
 
   // OBS functions
@@ -122,8 +103,37 @@
     }
   }
 
+  async function nextSlide() {
+    await sendCommand('TriggerHotkeyBySequence', { 'keyId':'OBS_KEY_N', 'keyModifiers' : { 'shift': true, 'control': true } } )
+    console.log('Next Slide');
+  }
+  async function previousSlide() {
+    await sendCommand('TriggerHotkeyBySequence', { 'keyId':'OBS_KEY_P', 'keyModifiers' : { 'shift': true, 'control': true } } )
+    console.log('Previous Slide');
+  }
+
   async function setScene(e) {
-    await sendCommand('SetCurrentScene', { 'scene-name': e.currentTarget.textContent });
+    const monthNames = ["januari", "februari", "maart", "april", "mei", "juni",
+      "juli", "augustus", "september", "oktober", "november", "december"
+    ];
+    var sceneName = e.currentTarget.textContent;
+    if(sceneName == beginDienst) {
+      var d = new Date();
+      var day = d.getDate();
+      var month = monthNames[d.getMonth()];
+      var year = d.getFullYear();
+      await sendCommand('SetTextFreetype2Properties', { 'source': 'Datum', 'text': day +' '+month+' '+year,
+        'font': { 'face': 'Arial', 'flags': 0, 'size': 140, 'style': 'Regular' }});
+      let data = await sendCommand('GetSceneItemProperties', {'scene-name': beginDienst, 'item' : 'Datum'});
+      let posX = (screenSizeX/2) - (data.sourceWidth/2);
+      let posY = (screenSizeY/2) - (data.sourceHeight/2);
+      await sendCommand('SetSceneItemProperties', {'scene-name': beginDienst, 'item' : 'Datum', 'position': {'x': posX, 'y': posY}});
+    }
+    await sendCommand('SetCurrentScene', { 'scene-name': sceneName });
+  }
+
+  async function changeSceneCollection(e){
+    await sendCommand('SetCurrentSceneCollection', { 'sc-name': e.currentTarget.textContent.trim() });
   }
 
   async function transitionScene(e) {
@@ -150,20 +160,25 @@
     await sendCommand('StopRecording');
   }
 
-  async function pauseRecording(){
-    await sendCommand('PauseRecording');
-  }
-
-  async function resumeRecording(){
-    await sendCommand('ResumeRecording');
+  async function toggleMute() {
+    await sendCommand('ToggleMute', { 'source': audioDevice });
+    console.log('Muted triggerd');
+    await getMuteStatus();
   }
 
   async function updateScenes() {
+    let retrievedSC = await sendCommand('GetCurrentSceneCollection')
+    currentSceneCollection = retrievedSC.scName;
+
+    let retrievedLSC = await sendCommand('ListSceneCollections');
+    scenesList = retrievedLSC.sceneCollections;
+
     let data = await sendCommand('GetSceneList');
     currentScene = data.currentScene;
     scenes = data.scenes.filter(i => {
       return i.name.indexOf('(hidden)') === -1;
     }); // Skip hidden scenes
+
     if (isStudioMode) {
       obs
         .send('GetPreviewScene')
@@ -173,6 +188,21 @@
           // before the socket has recieved confirmation of disabled studio mode.
         });
     }
+    let numberOfScenes = scenes.length;
+    let sceneRows = numberOfScenes / 4;
+
+    if (sceneRows <= 1){
+      previewClass = 'preview-1row';
+    }else if (sceneRows <= 2){
+      previewClass = 'preview-2row';
+    } else if (sceneRows <= 3){
+      previewClass = 'preview-3row';
+    }else if (sceneRows <= 4){
+      previewClass = 'preview-4row';
+    }else if (sceneRows <= 5){
+      previewClass = 'preview-5row';
+    }
+
     console.log('Scenes updated');
   }
 
@@ -181,23 +211,29 @@
     isStudioMode = (data && data.studioMode) || false;
   }
 
+  async function getMuteStatus() {
+    let data = await sendCommand('GetMute', { 'source': audioDevice });
+    isMuted = (data && data.muted) || false;
+    console.log(data);
+  }
+
   async function getScreenshot() {
     if (connected) {
-      let data = await sendCommand('TakeSourceScreenshot', { sourceName: currentScene, embedPictureFormat: 'png', width: 960, height: 540 });
+      let data = await sendCommand('TakeSourceScreenshot', { sourceName: currentScene, embedPictureFormat: 'jpg', width: 960, height: 540 });
       if (data && data.img) {
         document.querySelector('#program').src = data.img;
         document.querySelector('#program').className = '';
       }
 
       if (isStudioMode) {
-        let data = await sendCommand('TakeSourceScreenshot', { sourceName: currentPreviewScene, embedPictureFormat: 'png', width: 960, height: 540 });
+        let data = await sendCommand('TakeSourceScreenshot', { sourceName: currentPreviewScene, embedPictureFormat: 'jpg', width: 960, height: 540 });
         if (data && data.img) {
           document.querySelector('#preview').src = data.img;
           document.querySelector('#preview').classList.remove('is-hidden');
         }
       }
     }
-    setTimeout(getScreenshot, 1000);
+    setTimeout(getScreenshot, 1);
   }
 
   async function connect() {
@@ -251,6 +287,7 @@
     await getStudioMode();
     await updateScenes();
     await getScreenshot();
+    await getMuteStatus();
     document.querySelector('#program').classList.remove('is-hidden');
   });
 
@@ -267,6 +304,18 @@
   // Heartbeat
   obs.on('Heartbeat', data => {
     heartbeat = data;
+  });
+
+  // StreamStatus
+  obs.on('StreamStatus', data =>{
+    streamStatus = data;
+    streamBitrate = streamStatus['kbits-per-sec'];
+    bitrateStatus = streamBitrate / configuredStreamBitrate;
+  });
+
+  // StreamStopped
+  obs.on("StreamStopped", data => {
+    streamStatus = false
   });
 
   // Scenes
@@ -296,14 +345,14 @@
 </script>
 
 <svelte:head>
-  <title>OBS-web - control OBS from anywhere</title>
+  <title>Hillegonda stream app</title>
 </svelte:head>
 
-<nav class="navbar is-primary" role="navigation" aria-label="main navigation">
+<nav class="navbar is-info is-fixed-top" role="navigation" aria-label="main navigation">
   <div class="navbar-brand">
     <a class="navbar-item is-size-4 has-text-weight-bold" href="/">
-      <img src="favicon.png" alt="OBS-web" class="rotate" />
-      &nbsp; OBS-web
+      <img src="favicon.png" alt="Hillegonda stream app" />
+      &nbsp; Hillegonda stream app
     </a>
 
     <!-- svelte-ignore a11y-missing-attribute -->
@@ -316,15 +365,26 @@
 
   <div id="navmenu" class="navbar-menu">
     <div class="navbar-end">
+      {#if connected}
+        <div class:is-disable={streamStatus} class="navbar-item has-dropdown">
+          <!-- svelte-ignore a11y-missing-attribute -->
+          <a class="navbar-link">
+            {currentSceneCollection}
+          </a>
+          <div class="navbar-dropdown">
+            <!-- svelte-ignore a11y-missing-attribute -->
+            {#each scenesList as sc}
+              <a class="navbar-item" on:click={changeSceneCollection}>
+                <p>{sc["sc-name"]}</p>
+              </a>
+            {/each}
+          </div>
+        </div>
+      {/if}
       <div class="navbar-item">
         <div class="buttons">
           <!-- svelte-ignore a11y-missing-attribute -->
           {#if connected}
-            <a class="button is-info is-light" disabled>
-              {#if heartbeat}
-                {Math.round(heartbeat.stats.fps)} fps, {Math.round(heartbeat.stats['cpu-usage'])}% CPU, {heartbeat.stats['output-skipped-frames']} skipped frames
-              {:else}Connected{/if}
-            </a>
             {#if heartbeat && heartbeat.streaming}
               <a class="button is-danger" on:click={stopStream}>
                 <span class="icon">
@@ -335,7 +395,7 @@
                 </span>
               </a>
             {:else}
-              <a class="button is-danger" on:click={startStream}>
+              <a class="button is-primary" on:click={startStream}>
                 <span class="icon">
                   <Icon path={mdiAccessPoint} />
                 </span>
@@ -345,25 +405,6 @@
               </a>
             {/if}
             {#if heartbeat && heartbeat.recording}
-              {#if heartbeat.recordingPaused}
-                <a class="button is-danger" on:click={resumeRecording}>
-                  <span class="icon">
-                    <Icon path={mdiPlayPause} />
-                  </span>
-                  <span>
-                    Resume recording
-                  </span>
-                </a>
-              {:else}
-              <a class="button is-danger" on:click={pauseRecording}>
-                <span class="icon">
-                  <Icon path={mdiPause} />
-                </span>
-                <span>
-                  Pause recording
-                </span>
-              </a>
-              {/if}
               <a class="button is-danger" on:click={stopRecording}>
                 <span class="icon">
                   <Icon path={mdiStop} />
@@ -372,8 +413,8 @@
                   Stop recording ({heartbeat.totalRecordTime} secs)
                 </span>
               </a>
-              {:else}
-              <a class="button is-danger" on:click={startRecording}>
+            {:else}
+              <a class="button is-primary" on:click={startRecording}>
                 <span class="icon">
                   <Icon path={mdiRecord} />
                 </span>
@@ -382,95 +423,49 @@
                 </span>
               </a>
             {/if}
-            <a class="button is-danger is-light" on:click={disconnect}>Disconnect</a>
-            <a class:is-light={!isStudioMode} class="button is-link" on:click={toggleStudioMode} title="Toggle Studio Mode">
-              <span class="icon">
-                <Icon path={mdiBorderVertical} />
-              </span>
-            </a>
-            <a class:is-light={!isSceneOnTop} class="button is-link" on:click={switchSceneView} title="Show Scene on Top">
-              <span class="icon">
-                <Icon path={mdiArrowSplitHorizontal} />
-              </span>
-            </a>
           {:else}
             <a class="button is-danger" disabled>{errorMessage || 'Not connected'}</a>
           {/if}
           <!-- svelte-ignore a11y-missing-attribute -->
-          <a class:is-light={!isFullScreen} class="button is-link" on:click={toggleFullScreen} title="Toggle Fullscreen">
-            <span class="icon">
-              <Icon path={isFullScreen ? mdiFullscreenExit : mdiFullscreen} />
-            </span>
-          </a>
         </div>
       </div>
     </div>
   </div>
 </nav>
 
-<section class="section">
-  <div class="container">
+<section class="section mt-5">
+  <div class="container is-fluid ">
     {#if connected}
-      {#if isSceneOnTop}
-        <SceneView isStudioMode={isStudioMode} transitionScene={transitionScene}/>
-      {/if}
       {#each sceneChunks as chunk}
         <div class="tile is-ancestor">
           {#each chunk as sc}
-            <div class="tile is-parent">
+            <div class="tile is-parent p-1">
               <!-- svelte-ignore a11y-missing-attribute -->
               {#if currentScene == sc.name}
                 <a class="tile is-child is-primary notification">
-                  <p class="title has-text-centered is-size-6-mobile">{sc.name}</p>
+                  <p class="subtitle has-text-centered is-size-7-mobile">{sc.name}</p>
                 </a>
               {:else if currentPreviewScene == sc.name}
                 <a on:click={setScene} class="tile is-child is-warning notification">
-                  <p class="title has-text-centered is-size-6-mobile">{sc.name}</p>
+                  <p class="subtitle has-text-centered is-size-7-mobile">{sc.name}</p>
                 </a>
               {:else}
                 <a on:click={isStudioMode ? setPreview : setScene} class="tile is-child is-info notification">
-                  <p class="title has-text-centered is-size-6-mobile">{sc.name}</p>
+                  <p class="subtitle has-text-centered is-size-7-mobile">{sc.name}</p>
                 </a>
               {/if}
             </div>
           {/each}
         </div>
       {/each}
-      {#if !isSceneOnTop}
-        <SceneView isStudioMode={isStudioMode} transitionScene={transitionScene}/>
-      {/if}
+      <SceneView isStudioMode={isStudioMode} transitionScene={transitionScene} nextSlide={nextSlide}
+                 previousSlide={previousSlide} isLiturgieMode={isLiturgieMode} previewClass={previewClass}/>
     {:else}
-      <h1 class="subtitle">
-        Welcome to
-        <strong>OBS-web</strong>
-        - the easiest way to control
-        <a href="https://obsproject.com/" target="_blank">OBS</a>
-        remotely!
-      </h1>
-
-      {#if document.location.protocol === 'https:'}
-        <div class="notification is-danger">
-          You are checking this page on a secure HTTPS connection. That's great, but it means you can
-          <strong>only</strong>
-          connect to WSS (secure websocket) hosts, for example OBS exposed with
-          <a href="https://ngrok.com/">ngrok</a>
-          or
-          <a href="https://pagekite.net/">pagekite</a>
-          . If you want to connect to a local OBS instance,
-          <strong>
-            <a href="http://{document.location.hostname}{document.location.port ? ':' + document.location.port : ''}{document.location.pathname}">
-              please click here to load the non-secure version of this page
-            </a>
-          </strong>
-          .
-        </div>
-      {/if}
-
-      <p>To get started, enter your OBS host below and click "connect".</p>
+      <p>De connectie had vanzelf moeten gaan. Dit is niet gelukt. Probeer het handmatig.</p>
 
       <div class="field is-grouped">
         <p class="control is-expanded">
-          <input id="host" on:keyup={hostkey} bind:value={host} class="input" type="text" placeholder="localhost:4444" />
+          <input id="host" on:keyup={hostkey} bind:value={host} class="input" type="text" placeholder={host} />
         </p>
         <p class="control">
           <button on:click={connect} class="button is-success">Connect</button>
@@ -484,18 +479,61 @@
       </p>
     {/if}
   </div>
-
 </section>
+<nav class="navbar is-info is-fixed-bottom" role="navigation" aria-label="main navigation">
+  <div class="navbar-start is-justify-content-center is-flex-grow-1">
+    <div class="navbar-item">
+      <!-- svelte-ignore a11y-missing-attribute -->
+      <a class:is-light={!isLiturgieMode} class="button is-link" on:click={toggleLiturgieMode} title="Toggle Studio Mode">
+          <span class="icon">
+            <Icon path={mdiCommentTextOutline} />
+          </span>
+      </a>
+    </div>
 
-<footer class="footer">
-  <div class="content has-text-centered">
-    <p>
-      <strong>OBS-web</strong>
-      by
-      <a href="https://niekvandermaas.nl/">Niek van der Maas</a>
-      &mdash; see
-      <a href="https://github.com/Niek/obs-web">GitHub</a>
-      for source code.
-    </p>
+    <div class="navbar-item">
+      <!-- svelte-ignore a11y-missing-attribute -->
+      <a class="button is-info is-light" disabled>
+        {#if heartbeat}
+          {Math.round(heartbeat.stats.fps)} fps, {Math.round(heartbeat.stats['cpu-usage'])}% CPU, {heartbeat.stats['output-skipped-frames']} skipped frames
+          {#if streamStatus}
+            , {streamBitrate} kb/s
+            {#if bitrateStatus >= 0.8}
+                  <span class="icon has-text-success ml-0">
+                      &nbsp; <Icon path={mdiCheckboxMarked} />
+                  </span>
+            {:else if bitrateStatus >= 0.6}
+                    <span class="icon has-text-warning ml-0">
+                      &nbsp; <Icon path={mdiAlert} />
+                    </span>
+            {:else}
+                    <span class="icon has-text-danger ml-0">
+                      &nbsp; <Icon path={mdiCloseOctagon} />
+                    </span>
+            {/if}
+          {/if}
+        {:else}Connected{/if}
+      </a>
+    </div>
+    <div class="navbar-item">
+      <!-- svelte-ignore a11y-missing-attribute -->
+      <a class:is-light={!isStudioMode} class="button is-link" on:click={toggleStudioMode} title="Toggle Studio Mode">
+          <span class="icon">
+            <Icon path={mdiBorderVertical} />
+          </span>
+      </a>
+    </div>
+    <div class="navbar-item">
+      <!-- svelte-ignore a11y-missing-attribute -->
+      <a class:is-danger={isMuted} class:is-primary={!isMuted} class="button" on:click={toggleMute} title="Toggle Mute">
+          <span class="icon">
+            {#if isMuted}
+              <Icon path={mdiSpeakerOff} />
+            {:else}
+              <Icon path={mdiSpeaker} />
+            {/if}
+          </span>
+      </a>
+    </div>
   </div>
-</footer>
+</nav>

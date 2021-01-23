@@ -1,0 +1,9 @@
+{
+  "host": "192.168.178.18:4444",
+  "password": "Hillegondakerk",
+  "configuredStreamBitrate": 5000,
+  "beginDienst": "Begin dienst",
+  "audioDevice": "Audioinvoer Opname",
+  "screenSizeX": 1920,
+  "screenSizeY": 1080
+}

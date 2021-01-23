@@ -1,34 +1,19 @@
 {
-  "theme_color": "#00d1b2",
-  "background_color": "#00d1b2",
-  "display": "standalone",
-  "orientation": "landscape",
-  "scope": "/",
-  "start_url": "/",
-  "name": "OBS-web",
-  "short_name": "OBS-web",
-  "description": "OBS-web - The easiest way to control OBS remotely",
-  "prefer_related_applications": false,
+  "short_name": "Hillegondakerk stream app",
+  "name": "Hillegondakerk stream app",
   "icons": [
     {
-      "src": "/icon/icon-192x192.png",
-      "sizes": "192x192",
+      "src": "favicon.png",
+      "sizes": "96x96",
       "type": "image/png"
     },
     {
-      "src": "/icon/icon-256x256.png",
-      "sizes": "256x256",
-      "type": "image/png"
-    },
-    {
-      "src": "/icon/icon-384x384.png",
-      "sizes": "384x384",
-      "type": "image/png"
-    },
-    {
-      "src": "/icon/icon-512x512.png",
-      "sizes": "512x512",
+      "src": "icon.png",
+      "sizes":"175x175",
       "type": "image/png"
     }
-  ]
+  ],
+  "start_url": "/index.html",
+  "display": "standalone",
+  "orientation": "landscape"
 }
