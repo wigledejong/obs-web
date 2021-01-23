@@ -2,7 +2,7 @@
 
 #### WebApp to control [OBS](https://obsproject.com/) remotely for the Hillegondakerk
 
-###### Download latest build [here](https://github.com/Niek/obs-web/archive/gh-pages.zip)
+###### Download latest build [here](https://github.com/Niek/obs-web/archive/gh-pages.zip) -- aanpassen
 
 Based on https://github.com/Niek/obs-web/
 ---
