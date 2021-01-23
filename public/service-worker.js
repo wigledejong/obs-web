@@ -7,10 +7,10 @@ const CACHE_NAME = 'offline';
 const cacheFiles = [
   '/',
   'service-worker.js',
-  '/icon/icon-192x192.png',
-  '/icon/icon-256x256.png',
-  '/icon/icon-384x384.png',
-  '/icon/icon-512x512.png',
+  'favicon.ico',
+  'icon.png',
+  'apple-touch-icon.png',
+  'apple-touch-icon-precomposed.png',
 ];
 
 
