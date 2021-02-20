@@ -41,6 +41,11 @@
     audioDevice = `${obsConfig.audioDevice}`;
     screenSizeX = `${obsConfig.screenSizeX}`;
     screenSizeY = `${obsConfig.screenSizeY}`;
+    camera1IP = `${obsConfig.camera1IP}`;
+    camera1User = `${obsConfig.camera1User}`;
+    camera1Password = `${obsConfig.camera1Password}`;
+    overzichtPreset = `${obsConfig.overzichtPreset}`;
+    predikantPreset = `${obsConfig.predikantPreset}`;
     await connect();
 
     if (document.location.hash != '') {
@@ -64,6 +69,7 @@
     heartbeat,
     streamStatus,
     currentScene,
+    nextScene,
     currentPreviewScene,
     currentSceneCollection,
     isStudioMode,
@@ -77,12 +83,17 @@
     streamBitrate,
     screenSizeX,
     screenSizeY,
-    bitrateStatus= 0;
+    bitrateStatus,
+    overzichtPreset,
+    predikantPreset= 0;
   let host,
     password,
     errorMessage,
     audioDevice,
-    beginDienst = '';
+    beginDienst,
+    camera1IP,
+    camera1User,
+    camera1Password = '';
   $: sceneChunks = Array(Math.ceil(scenes.length / 4))
     .fill()
     .map((_, index) => index * 4)
@@ -120,8 +131,16 @@
     const monthNames = ["januari", "februari", "maart", "april", "mei", "juni",
       "juli", "augustus", "september", "oktober", "november", "december"
     ];
-    var sceneName = e.currentTarget.textContent;
-    if(sceneName == beginDienst) {
+    nextScene = e.currentTarget.textContent;
+
+    if(currentScene == "Predikant"){
+      sendPresetToCam(overzichtPreset);
+    }
+    if(nextScene == "Predikant"){
+      sendPresetToCam(predikantPreset);
+    }
+
+    if(nextScene == beginDienst) {
       var d = new Date();
       var day = d.getDate();
       var month = monthNames[d.getMonth()];
@@ -133,7 +152,27 @@
       let posY = (screenSizeY/2) - (data.sourceHeight/2);
       await sendCommand('SetSceneItemProperties', {'scene-name': beginDienst, 'item' : 'Datum', 'position': {'x': posX, 'y': posY}});
     }
-    await sendCommand('SetCurrentScene', { 'scene-name': sceneName });
+    await sendCommand('SetCurrentScene', { 'scene-name': nextScene });
+  }
+
+  async function sendPresetToCam(preset){
+    const url = "http://"+ camera1IP +"/cgi-bin/lums_configuration.cgi";
+
+    const body = JSON.stringify({"cmd":"campresetrecall", "memnum": preset});
+
+    const options = {
+      mode: 'no-cors',
+      credentials: 'include',
+      method: 'post',
+      headers: {
+        'Cookie': 'Cookie: userName='+camera1User+'; passWord='+camera1Password+';'
+      },
+      body: body
+    }
+
+    await fetch(url, options).catch(err => {
+      console.error('Request failed', err)
+    })
   }
 
   async function changeSceneCollection(e){

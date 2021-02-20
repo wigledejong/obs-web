@@ -1,9 +1,14 @@
 {
-  "host": "192.168.178.18:4444",
+  "host": "172.16.110.26:4444",
   "password": "Hillegondakerk",
   "configuredStreamBitrate": 5000,
   "beginDienst": "Begin dienst",
   "audioDevice": "Audioinvoer Opname",
   "screenSizeX": 1920,
-  "screenSizeY": 1080
+  "screenSizeY": 1080,
+  "camera1IP":"172.16.110.34",
+  "camera1User": "admin",
+  "camera1Password": "9999",
+  "overzichtPreset": 1,
+  "predikantPreset": 2
 }
