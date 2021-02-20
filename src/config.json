@@ -9,6 +9,7 @@
   "camera1IP":"172.16.110.34",
   "camera1User": "admin",
   "camera1Password": "9999",
-  "overzichtPreset": 1,
-  "predikantPreset": 2
+  "camera1ZoomScene": "Predikant",
+  "camera1OverzichtPreset": 1,
+  "camera1ZoomPreset": 2
 }

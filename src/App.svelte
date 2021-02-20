@@ -44,8 +44,9 @@
     camera1IP = `${obsConfig.camera1IP}`;
     camera1User = `${obsConfig.camera1User}`;
     camera1Password = `${obsConfig.camera1Password}`;
-    overzichtPreset = `${obsConfig.overzichtPreset}`;
-    predikantPreset = `${obsConfig.predikantPreset}`;
+    camera1ZoomScene = `${obsConfig.camera1ZoomScene}`;
+    camera1OverzichtPreset = `${obsConfig.camera1OverzichtPreset}`;
+    camera1ZoomPreset = `${obsConfig.camera1ZoomPreset}`;
     await connect();
 
     if (document.location.hash != '') {
@@ -84,8 +85,8 @@
     screenSizeX,
     screenSizeY,
     bitrateStatus,
-    overzichtPreset,
-    predikantPreset= 0;
+    camera1OverzichtPreset,
+    camera1ZoomPreset= 0;
   let host,
     password,
     errorMessage,
@@ -93,7 +94,8 @@
     beginDienst,
     camera1IP,
     camera1User,
-    camera1Password = '';
+    camera1Password,
+    camera1ZoomScene = '';
   $: sceneChunks = Array(Math.ceil(scenes.length / 4))
     .fill()
     .map((_, index) => index * 4)
@@ -133,11 +135,11 @@
     ];
     nextScene = e.currentTarget.textContent;
 
-    if(currentScene == "Predikant"){
-      sendPresetToCam(overzichtPreset);
+    if(currentScene == camera1ZoomScene){
+      sendPresetToCam(camera1OverzichtPreset);
     }
-    if(nextScene == "Predikant"){
-      sendPresetToCam(predikantPreset);
+    if(nextScene == camera1ZoomScene){
+      sendPresetToCam(camera1ZoomPreset);
     }
 
     if(nextScene == beginDienst) {
