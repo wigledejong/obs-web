@@ -135,7 +135,7 @@
     ];
     nextScene = e.currentTarget.textContent;
 
-    if(currentScene == camera1ZoomScene){
+    if(nextScene != camera1ZoomScene){
       sendPresetToCam(camera1OverzichtPreset);
     }
     if(nextScene == camera1ZoomScene){
