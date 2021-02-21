@@ -48,6 +48,16 @@
     camera1ZoomScene = `${obsConfig.camera1ZoomScene}`;
     camera1OverzichtPreset = `${obsConfig.camera1OverzichtPreset}`;
     camera1ZoomPreset = `${obsConfig.camera1ZoomPreset}`;
+    profileUrl = "http://"+ camera1IP +"/cgi-bin/lums_piceffect.cgi";
+    presetUrl =  "http://"+ camera1IP +"/cgi-bin/lums_configuration.cgi";
+    datum = new Date();
+    if(datum.getHours() < 17){
+      await setOchtendProfiel();
+    }
+    else {
+      await setAvondProfiel();
+    }
+
     await connect();
 
     if (document.location.hash != '') {
@@ -80,7 +90,8 @@
     avondProfiel,
     isMuted,
     wakeLock,
-    previewClass = false;
+    previewClass,
+    datum = false;
   let scenes =[];
   let scenesList = [];
   let configuredStreamBitrate,
@@ -98,7 +109,9 @@
     camera1IP,
     camera1User,
     camera1Password,
-    camera1ZoomScene = '';
+    camera1ZoomScene,
+    profileUrl,
+    presetUrl = '';
   $: sceneChunks = Array(Math.ceil(scenes.length / 4))
     .fill()
     .map((_, index) => index * 4)
@@ -139,17 +152,16 @@
     nextScene = e.currentTarget.textContent;
 
     if(nextScene != camera1ZoomScene){
-      await sendPresetToCam(camera1OverzichtPreset);
+      await sendCommandToLumens(presetUrl, JSON.stringify({"cmd":"campresetrecall", "memnum": camera1OverzichtPreset}));
     }
     if(nextScene == camera1ZoomScene){
-      await sendPresetToCam(camera1ZoomPreset);
+      await sendCommandToLumens(presetUrl, JSON.stringify({"cmd":"campresetrecall", "memnum": camera1ZoomPreset}));
     }
 
     if(nextScene == beginDienst) {
-      var d = new Date();
-      var day = d.getDate();
-      var month = monthNames[d.getMonth()];
-      var year = d.getFullYear();
+      var day = datum.getDate();
+      var month = monthNames[datum.getMonth()];
+      var year = datum.getFullYear();
       await sendCommand('SetTextFreetype2Properties', { 'source': 'Datum', 'text': day +' '+month+' '+year,
         'font': { 'face': 'Arial', 'flags': 0, 'size': 140, 'style': 'Regular' }});
       let data = await sendCommand('GetSceneItemProperties', {'scene-name': beginDienst, 'item' : 'Datum'});
@@ -160,50 +172,27 @@
     await sendCommand('SetCurrentScene', { 'scene-name': nextScene });
   }
 
-  async function sendPresetToCam(preset){
-    const url = "http://"+ camera1IP +"/cgi-bin/lums_configuration.cgi";
-
-    const body = JSON.stringify({"cmd":"campresetrecall", "memnum": preset});
-
-    const options = {
-      mode: 'no-cors',
-      credentials: 'include',
-      method: 'post',
-      headers: {
-        'Cookie': 'Cookie: userName='+camera1User+'; passWord='+camera1Password+';'
-      },
-      body: body
-    }
-
-    await fetch(url, options).catch(err => {
-      console.error('Request failed', err)
-    })
-  }
-
   async function setAvondProfiel(){
-    await sendPictureProfile(JSON.stringify({"cmd": "gammanameindex", "value": "1"}));
-    await sendPictureProfile(JSON.stringify({"cmd": "brightnessnameindex", "value": "1"}));
-    await sendPictureProfile(JSON.stringify({"cmd": "huenameindex", "value": "1"}));
-    await sendPictureProfile(JSON.stringify({"cmd": "saturationnameindex", "value": "1"}));
-    await sendPictureProfile(JSON.stringify({"cmd": "sharpnessnameindex", "value": "1"}));
+    await sendCommandToLumens(profileUrl, JSON.stringify({"cmd": "gammanameindex", "value": "1"}));
+    await sendCommandToLumens(profileUrl, JSON.stringify({"cmd": "brightnessnameindex", "value": "1"}));
+    await sendCommandToLumens(profileUrl, JSON.stringify({"cmd": "huenameindex", "value": "1"}));
+    await sendCommandToLumens(profileUrl, JSON.stringify({"cmd": "saturationnameindex", "value": "1"}));
+    await sendCommandToLumens(profileUrl, JSON.stringify({"cmd": "sharpnessnameindex", "value": "1"}));
     avondProfiel = true;
     ochtendProfiel = false;
   }
 
   async function setOchtendProfiel(){
-    await sendPictureProfile(JSON.stringify({"cmd": "gammanameindex", "value": "3"}));
-    await sendPictureProfile(JSON.stringify({"cmd": "brightnessnameindex", "value": "7"}));
-    await sendPictureProfile(JSON.stringify({"cmd": "huenameindex", "value": "8"}));
-    await sendPictureProfile(JSON.stringify({"cmd": "saturationnameindex", "value": "3"}));
-    await sendPictureProfile(JSON.stringify({"cmd": "sharpnessnameindex", "value": "7"}));
+    await sendCommandToLumens(profileUrl, JSON.stringify({"cmd": "gammanameindex", "value": "3"}));
+    await sendCommandToLumens(profileUrl, JSON.stringify({"cmd": "brightnessnameindex", "value": "7"}));
+    await sendCommandToLumens(profileUrl, JSON.stringify({"cmd": "huenameindex", "value": "8"}));
+    await sendCommandToLumens(profileUrl, JSON.stringify({"cmd": "saturationnameindex", "value": "3"}));
+    await sendCommandToLumens(profileUrl, JSON.stringify({"cmd": "sharpnessnameindex", "value": "7"}));
     avondProfiel = false;
     ochtendProfiel = true;
   }
 
-  async function sendPictureProfile(body){
-
-    const url = "http://"+ camera1IP +"/cgi-bin/lums_piceffect.cgi";
-
+  async function sendCommandToLumens(url, body){
     const options = {
       mode: 'no-cors',
       credentials: 'include',
@@ -629,6 +618,8 @@
             <Icon path={mdiWhiteBalanceSunny} />
           </span>
       </a>
+    </div>
+    <div class="navbar-item">
       <!-- svelte-ignore a11y-missing-attribute -->
       <a class:is-primary={avondProfiel} class="button" on:click={setAvondProfiel} title="Avond profiel camera">
           <span class="icon">
