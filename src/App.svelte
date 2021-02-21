@@ -54,10 +54,10 @@
     presetUrl =  "http://"+ camera1IP +"/cgi-bin/lums_configuration.cgi";
     datum = new Date();
     if(datum.getHours() < 17){
-      await setOchtendProfiel();
+      await setCameraProfile(ochtendProfiel, false);
     }
     else {
-      await setAvondProfiel();
+      await setCameraProfile(avondProfiel, true);
     }
 
     await connect();
@@ -176,7 +176,7 @@
     await sendCommand('SetCurrentScene', { 'scene-name': nextScene });
   }
 
-  async function setProfiel(profiel, avond){
+  async function setCameraProfile(profiel, avond){
     for (let key of Object.keys(profiel)) {
       let value = profiel[key];
       console.log(key + " -> " + value)
@@ -607,7 +607,7 @@
     </div>
     <div class="navbar-item">
       <!-- svelte-ignore a11y-missing-attribute -->
-      <a class:is-primary={isOchtend} class="button" on:click={setProfiel(ochtendProfiel, false)} title="Ochtend profiel camera">
+      <a class:is-primary={isOchtend} class="button" on:click={setCameraProfile(ochtendProfiel, false)} title="Ochtend profiel camera">
           <span class="icon">
             <Icon path={mdiWhiteBalanceSunny} />
           </span>
@@ -615,7 +615,7 @@
     </div>
     <div class="navbar-item">
       <!-- svelte-ignore a11y-missing-attribute -->
-      <a class:is-primary={isAvond} class="button" on:click={setProfiel(avondProfiel, false)} title="Avond profiel camera">
+      <a class:is-primary={isAvond} class="button" on:click={setCameraProfile(avondProfiel, true)} title="Avond profiel camera">
           <span class="icon">
               <Icon path={mdiWeatherNight} />
           </span>
