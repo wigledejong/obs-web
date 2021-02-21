@@ -4,7 +4,8 @@
   // Imports
   import { onMount } from 'svelte';
   import './style.scss';
-  import { mdiCommentTextOutline, mdiSpeakerOff, mdiSpeaker, mdiBorderVertical, mdiAccessPoint, mdiAccessPointOff, mdiRecord, mdiStop, mdiCheckboxMarked, mdiAlert, mdiCloseOctagon} from '@mdi/js';
+  import { mdiWeatherNight, mdiWhiteBalanceSunny, mdiCommentTextOutline, mdiSpeakerOff, mdiSpeaker, mdiBorderVertical,
+    mdiAccessPoint, mdiAccessPointOff, mdiRecord, mdiStop, mdiCheckboxMarked, mdiAlert, mdiCloseOctagon} from '@mdi/js';
   import Icon from 'mdi-svelte';
   import compareVersions from 'compare-versions';
   import * as obsConfig from './config.json';
@@ -18,7 +19,7 @@
 
   onMount(async () => {
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/service-worker.js');
+      await navigator.serviceWorker.register('/service-worker.js');
     }
 
     // Hamburger menu
@@ -75,6 +76,8 @@
     currentSceneCollection,
     isStudioMode,
     isLiturgieMode,
+    ochtendProfiel,
+    avondProfiel,
     isMuted,
     wakeLock,
     previewClass = false;
@@ -136,10 +139,10 @@
     nextScene = e.currentTarget.textContent;
 
     if(nextScene != camera1ZoomScene){
-      sendPresetToCam(camera1OverzichtPreset);
+      await sendPresetToCam(camera1OverzichtPreset);
     }
     if(nextScene == camera1ZoomScene){
-      sendPresetToCam(camera1ZoomPreset);
+      await sendPresetToCam(camera1ZoomPreset);
     }
 
     if(nextScene == beginDienst) {
@@ -161,6 +164,45 @@
     const url = "http://"+ camera1IP +"/cgi-bin/lums_configuration.cgi";
 
     const body = JSON.stringify({"cmd":"campresetrecall", "memnum": preset});
+
+    const options = {
+      mode: 'no-cors',
+      credentials: 'include',
+      method: 'post',
+      headers: {
+        'Cookie': 'Cookie: userName='+camera1User+'; passWord='+camera1Password+';'
+      },
+      body: body
+    }
+
+    await fetch(url, options).catch(err => {
+      console.error('Request failed', err)
+    })
+  }
+
+  async function setAvondProfiel(){
+    await sendPictureProfile(JSON.stringify({"cmd": "gammanameindex", "value": "1"}));
+    await sendPictureProfile(JSON.stringify({"cmd": "brightnessnameindex", "value": "1"}));
+    await sendPictureProfile(JSON.stringify({"cmd": "huenameindex", "value": "1"}));
+    await sendPictureProfile(JSON.stringify({"cmd": "saturationnameindex", "value": "1"}));
+    await sendPictureProfile(JSON.stringify({"cmd": "sharpnessnameindex", "value": "1"}));
+    avondProfiel = true;
+    ochtendProfiel = false;
+  }
+
+  async function setOchtendProfiel(){
+    await sendPictureProfile(JSON.stringify({"cmd": "gammanameindex", "value": "3"}));
+    await sendPictureProfile(JSON.stringify({"cmd": "brightnessnameindex", "value": "7"}));
+    await sendPictureProfile(JSON.stringify({"cmd": "huenameindex", "value": "8"}));
+    await sendPictureProfile(JSON.stringify({"cmd": "saturationnameindex", "value": "3"}));
+    await sendPictureProfile(JSON.stringify({"cmd": "sharpnessnameindex", "value": "7"}));
+    avondProfiel = false;
+    ochtendProfiel = true;
+  }
+
+  async function sendPictureProfile(body){
+
+    const url = "http://"+ camera1IP +"/cgi-bin/lums_piceffect.cgi";
 
     const options = {
       mode: 'no-cors',
@@ -577,6 +619,20 @@
             {:else}
               <Icon path={mdiSpeaker} />
             {/if}
+          </span>
+      </a>
+    </div>
+    <div class="navbar-item">
+      <!-- svelte-ignore a11y-missing-attribute -->
+      <a class:is-primary={ochtendProfiel} class="button" on:click={setOchtendProfiel} title="Ochtend profiel camera">
+          <span class="icon">
+            <Icon path={mdiWhiteBalanceSunny} />
+          </span>
+      </a>
+      <!-- svelte-ignore a11y-missing-attribute -->
+      <a class:is-primary={avondProfiel} class="button" on:click={setAvondProfiel} title="Avond profiel camera">
+          <span class="icon">
+              <Icon path={mdiWeatherNight} />
           </span>
       </a>
     </div>
