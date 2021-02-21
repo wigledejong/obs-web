@@ -48,6 +48,8 @@
     camera1ZoomScene = `${obsConfig.camera1ZoomScene}`;
     camera1OverzichtPreset = `${obsConfig.camera1OverzichtPreset}`;
     camera1ZoomPreset = `${obsConfig.camera1ZoomPreset}`;
+    avondProfiel = obsConfig.avondProfiel;
+    ochtendProfiel = obsConfig.ochtendProfiel;
     profileUrl = "http://"+ camera1IP +"/cgi-bin/lums_piceffect.cgi";
     presetUrl =  "http://"+ camera1IP +"/cgi-bin/lums_configuration.cgi";
     datum = new Date();
@@ -86,14 +88,16 @@
     currentSceneCollection,
     isStudioMode,
     isLiturgieMode,
-    ochtendProfiel,
-    avondProfiel,
+    isOchtend,
+    isAvond,
     isMuted,
     wakeLock,
     previewClass,
     datum = false;
   let scenes =[];
   let scenesList = [];
+  let avondProfiel = [];
+  let ochtendProfiel = [];
   let configuredStreamBitrate,
     streamBitrate,
     screenSizeX,
@@ -172,24 +176,14 @@
     await sendCommand('SetCurrentScene', { 'scene-name': nextScene });
   }
 
-  async function setAvondProfiel(){
-    await sendCommandToLumens(profileUrl, JSON.stringify({"cmd": "gammanameindex", "value": "1"}));
-    await sendCommandToLumens(profileUrl, JSON.stringify({"cmd": "brightnessnameindex", "value": "1"}));
-    await sendCommandToLumens(profileUrl, JSON.stringify({"cmd": "huenameindex", "value": "1"}));
-    await sendCommandToLumens(profileUrl, JSON.stringify({"cmd": "saturationnameindex", "value": "1"}));
-    await sendCommandToLumens(profileUrl, JSON.stringify({"cmd": "sharpnessnameindex", "value": "1"}));
-    avondProfiel = true;
-    ochtendProfiel = false;
-  }
-
-  async function setOchtendProfiel(){
-    await sendCommandToLumens(profileUrl, JSON.stringify({"cmd": "gammanameindex", "value": "3"}));
-    await sendCommandToLumens(profileUrl, JSON.stringify({"cmd": "brightnessnameindex", "value": "7"}));
-    await sendCommandToLumens(profileUrl, JSON.stringify({"cmd": "huenameindex", "value": "8"}));
-    await sendCommandToLumens(profileUrl, JSON.stringify({"cmd": "saturationnameindex", "value": "3"}));
-    await sendCommandToLumens(profileUrl, JSON.stringify({"cmd": "sharpnessnameindex", "value": "7"}));
-    avondProfiel = false;
-    ochtendProfiel = true;
+  async function setProfiel(profiel, avond){
+    for (let key of Object.keys(profiel)) {
+      let value = profiel[key];
+      console.log(key + " -> " + value)
+      await sendCommandToLumens(profileUrl, JSON.stringify({"cmd": key, "value": value}));
+    }
+    isAvond = avond;
+    isOchtend = !avond;
   }
 
   async function sendCommandToLumens(url, body){
@@ -613,7 +607,7 @@
     </div>
     <div class="navbar-item">
       <!-- svelte-ignore a11y-missing-attribute -->
-      <a class:is-primary={ochtendProfiel} class="button" on:click={setOchtendProfiel} title="Ochtend profiel camera">
+      <a class:is-primary={isOchtend} class="button" on:click={setProfiel(ochtendProfiel, false)} title="Ochtend profiel camera">
           <span class="icon">
             <Icon path={mdiWhiteBalanceSunny} />
           </span>
@@ -621,7 +615,7 @@
     </div>
     <div class="navbar-item">
       <!-- svelte-ignore a11y-missing-attribute -->
-      <a class:is-primary={avondProfiel} class="button" on:click={setAvondProfiel} title="Avond profiel camera">
+      <a class:is-primary={isAvond} class="button" on:click={setProfiel(avondProfiel, false)} title="Avond profiel camera">
           <span class="icon">
               <Icon path={mdiWeatherNight} />
           </span>
