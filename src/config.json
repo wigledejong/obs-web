@@ -13,11 +13,11 @@
   "camera1OverzichtPreset": 1,
   "camera1ZoomPreset": 2,
   "avondProfiel" : {
-    "gammanameindex" : "1",
-    "brightnessnameindex": "1",
-    "huenameindex": "1",
-    "saturationnameindex": "1",
-    "sharpnessnameindex": "1"
+    "gammanameindex" : "3",
+    "brightnessnameindex": "7",
+    "huenameindex": "8",
+    "saturationnameindex": "3",
+    "sharpnessnameindex": "7"
   },
   "ochtendProfiel" : {
     "gammanameindex" : "3",
