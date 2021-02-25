@@ -39,6 +39,7 @@
     password = `${obsConfig.password}`;
     configuredStreamBitrate = `${obsConfig.configuredStreamBitrate}`;
     beginDienst = `${obsConfig.beginDienst}`;
+    audioSource = `${obsConfig.audioSource}`;
     audioDevice = `${obsConfig.audioDevice}`;
     screenSizeX = `${obsConfig.screenSizeX}`;
     screenSizeY = `${obsConfig.screenSizeY}`;
@@ -108,6 +109,7 @@
   let host,
     password,
     errorMessage,
+    audioSource,
     audioDevice,
     beginDienst,
     camera1IP,
@@ -231,7 +233,7 @@
   }
 
   async function toggleMute() {
-    await sendCommand('ToggleMute', { 'source': audioDevice });
+    await sendCommand('ToggleMute', { 'source': audioSource });
     console.log('Muted triggerd');
     await getMuteStatus();
   }
@@ -282,9 +284,15 @@
   }
 
   async function getMuteStatus() {
-    let data = await sendCommand('GetMute', { 'source': audioDevice });
+    let data = await sendCommand('GetMute', { 'source': audioSource });
     isMuted = (data && data.muted) || false;
     console.log(data);
+  }
+
+  async function setAudioDevice() {
+    let audioSources = await sendCommand('GetSourceSettings', {sourceName : audioSource});
+    console.log(audioSources);
+    await sendCommand('SetSourceSettings', {sourceName: audioSource, sourceSettings: {device_id: audioDevice}});
   }
 
   async function getScreenshot() {
@@ -358,6 +366,8 @@
     await updateScenes();
     await getScreenshot();
     await getMuteStatus();
+    await setAudioDevice();
+
     document.querySelector('#program').classList.remove('is-hidden');
   });
 
