@@ -4,7 +4,7 @@
   "configuredStreamBitrate": 5000,
   "beginDienst": "Begin dienst",
   "audioSource": "Audioinvoer Opname",
-  "audioDevice": "",
+  "audioDevice": "{0.0.1.00000000}.{ee7e248b-e773-461f-a375-1b14d216162a}",
   "screenSizeX": 1920,
   "screenSizeY": 1080,
   "camera1IP":"172.16.110.34",
