@@ -43,16 +43,10 @@
     audioDevice = `${obsConfig.audioDevice}`;
     screenSizeX = `${obsConfig.screenSizeX}`;
     screenSizeY = `${obsConfig.screenSizeY}`;
-    camera1IP = `${obsConfig.camera1IP}`;
-    camera1User = `${obsConfig.camera1User}`;
-    camera1Password = `${obsConfig.camera1Password}`;
-    camera1ZoomScene = `${obsConfig.camera1ZoomScene}`;
-    camera1OverzichtPreset = `${obsConfig.camera1OverzichtPreset}`;
-    camera1ZoomPreset = `${obsConfig.camera1ZoomPreset}`;
+    cameras = obsConfig.cameras;
+    presets = obsConfig.presets;
     avondProfiel = obsConfig.avondProfiel;
     ochtendProfiel = obsConfig.ochtendProfiel;
-    profileUrl = "http://"+ camera1IP +"/cgi-bin/lums_piceffect.cgi";
-    presetUrl =  "http://"+ camera1IP +"/cgi-bin/lums_configuration.cgi";
     datum = new Date();
     if(datum.getHours() < 17){
       await setCameraProfile(ochtendProfiel, false);
@@ -99,6 +93,8 @@
   let scenesList = [];
   let avondProfiel = [];
   let ochtendProfiel = [];
+  let cameras = [];
+  let presets = [];
   let configuredStreamBitrate,
     streamBitrate,
     screenSizeX,
@@ -111,13 +107,7 @@
     errorMessage,
     audioSource,
     audioDevice,
-    beginDienst,
-    camera1IP,
-    camera1User,
-    camera1Password,
-    camera1ZoomScene,
-    profileUrl,
-    presetUrl = '';
+    beginDienst= '';
   $: sceneChunks = Array(Math.ceil(scenes.length / 4))
     .fill()
     .map((_, index) => index * 4)
@@ -157,12 +147,7 @@
     ];
     nextScene = e.currentTarget.textContent;
 
-    if(nextScene != camera1ZoomScene){
-      await sendCommandToLumens(presetUrl, JSON.stringify({"cmd":"campresetrecall", "memnum": camera1OverzichtPreset}));
-    }
-    if(nextScene == camera1ZoomScene){
-      await sendCommandToLumens(presetUrl, JSON.stringify({"cmd":"campresetrecall", "memnum": camera1ZoomPreset}));
-    }
+    await setCameraPreset(nextScene);
 
     if(nextScene == beginDienst) {
       var day = datum.getDate();
@@ -179,22 +164,36 @@
   }
 
   async function setCameraProfile(profiel, avond){
-    for (let key of Object.keys(profiel)) {
-      let value = profiel[key];
-      console.log(key + " -> " + value)
-      await sendCommandToLumens(profileUrl, JSON.stringify({"cmd": key, "value": value}));
+    for (let key in cameras){
+      let camera = cameras[key];
+      let profileUrl = "http://"+ camera.ip +"/cgi-bin/lums_piceffect.cgi";
+      for (let key of Object.keys(profiel)) {
+        let value = profiel[key];
+        await sendCommandToLumens(profileUrl, JSON.stringify({"cmd": key, "value": value}), camera);
+      }
     }
+
     isAvond = avond;
     isOchtend = !avond;
   }
 
-  async function sendCommandToLumens(url, body){
+  async function setCameraPreset(scene){
+    let preset = presets[scene];
+    if(!preset){
+      preset = presets["default"];
+    }
+    let camera = cameras[preset.camera];
+    let presetUrl =  "http://"+ camera.ip +"/cgi-bin/lums_configuration.cgi";
+    await sendCommandToLumens(presetUrl, JSON.stringify({"cmd":"campresetrecall", "memnum": preset.preset}), camera);
+  }
+
+  async function sendCommandToLumens(url, body, camera){
     const options = {
       mode: 'no-cors',
       credentials: 'include',
       method: 'post',
       headers: {
-        'Cookie': 'Cookie: userName='+camera1User+'; passWord='+camera1Password+';'
+        'Cookie': 'Cookie: userName='+camera.user+'; passWord='+camera.password+';'
       },
       body: body
     }

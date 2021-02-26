@@ -22,7 +22,9 @@ export default {
   },
   plugins: [
     svelte({
-      dev: !production
+      compilerOptions : {
+        dev: !production
+      },
     }),
 
     postcss({ extract: true, plugins: (production ? [purgecss({ content: ["./src/**/*.svelte", "./rollup.config.js"] })] : []), minimize: production }),
@@ -34,9 +36,7 @@ export default {
     }),
     commonjs(),
     nodePolyfills(),
-    json({
-      compact: true
-    }),
+    json(),
 
     html({
       template: async ({ attributes, files, meta, publicPath, title }) => {

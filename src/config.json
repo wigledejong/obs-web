@@ -7,12 +7,39 @@
   "audioDevice": "{0.0.1.00000000}.{ee7e248b-e773-461f-a375-1b14d216162a}",
   "screenSizeX": 1920,
   "screenSizeY": 1080,
-  "camera1IP":"172.16.110.34",
-  "camera1User": "admin",
-  "camera1Password": "9999",
-  "camera1ZoomScene": "Predikant",
-  "camera1OverzichtPreset": 1,
-  "camera1ZoomPreset": 2,
+  "cameras" : {
+    "camera1": {
+      "ip": "172.16.110.34",
+      "user": "admin",
+      "password": "9999"
+    }
+  },
+  "presets" : {
+    "Overzicht": {
+      "camera" : "camera1",
+      "preset" : 1
+    },
+    "Predikant":  {
+      "camera" : "camera1",
+      "preset" : 2
+    },
+    "Zangers Rechts":  {
+      "camera" : "camera1",
+      "preset" : 3
+    },
+    "Zangers Links":  {
+      "camera" : "camera1",
+      "preset" : 4
+    },
+    "Orgel":  {
+      "camera" : "camera1",
+      "preset" : 5
+    },
+    "default":  {
+      "camera" : "camera1",
+      "preset" : 1
+    }
+  },
   "avondProfiel" : {
     "gammanameindex" : "3",
     "brightnessnameindex": "7",
