@@ -17,27 +17,27 @@
   "presets" : {
     "Overzicht": {
       "camera" : "camera1",
-      "preset" : 1
+      "preset" : "1"
     },
     "Predikant":  {
       "camera" : "camera1",
-      "preset" : 2
+      "preset" : "2"
     },
     "Zangers Rechts":  {
       "camera" : "camera1",
-      "preset" : 3
+      "preset" : "3"
     },
     "Zangers Links":  {
       "camera" : "camera1",
-      "preset" : 4
+      "preset" : "4"
     },
     "Orgel":  {
       "camera" : "camera1",
-      "preset" : 5
+      "preset" : "5"
     },
     "default":  {
       "camera" : "camera1",
-      "preset" : 1
+      "preset" : "1"
     }
   },
   "avondProfiel" : {
