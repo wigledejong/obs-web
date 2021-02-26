@@ -193,7 +193,7 @@
       credentials: 'include',
       method: 'post',
       headers: {
-        'Cookie': 'Cookie: userName='+camera.user+'; passWord='+camera.password+';'
+        'Cookie': 'Cookie: userName='+camera.user+'; passWord='+camera.password+';SameSite=None;Secure'
       },
       body: body
     }
