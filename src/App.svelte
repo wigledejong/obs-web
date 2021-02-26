@@ -470,7 +470,7 @@
                   <Icon path={mdiAccessPointOff} />
                 </span>
                 <span>
-                  Stop stream ({heartbeat.totalStreamTime} secs)
+                  Stop stream ({heartbeat.totalStreamTime}/100000 secs)
                 </span>
               </a>
             {:else}
