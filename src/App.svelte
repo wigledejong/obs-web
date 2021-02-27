@@ -4,7 +4,7 @@
   // Imports
   import { onMount } from 'svelte';
   import './style.scss';
-  import { mdiWeatherNight, mdiWhiteBalanceSunny, mdiCommentTextOutline, mdiSpeakerOff, mdiSpeaker, mdiBorderVertical,
+  import { mdiCameraOff, mdiCamera, mdiWeatherNight, mdiWhiteBalanceSunny, mdiCommentTextOutline, mdiSpeakerOff, mdiSpeaker, mdiBorderVertical,
     mdiAccessPoint, mdiAccessPointOff, mdiRecord, mdiStop, mdiCheckboxMarked, mdiAlert, mdiCloseOctagon} from '@mdi/js';
   import Icon from 'mdi-svelte';
   import compareVersions from 'compare-versions';
@@ -18,6 +18,7 @@
   import SceneView from './SceneView.svelte';
 
   onMount(async () => {
+    isLoaded = true;
     if ('serviceWorker' in navigator) {
       await navigator.serviceWorker.register('/service-worker.js');
     }
@@ -88,7 +89,9 @@
     isMuted,
     wakeLock,
     previewClass,
-    datum = false;
+    cameraOn,
+    datum,
+    isLoaded = false;
   let scenes =[];
   let scenesList = [];
   let avondProfiel = [];
@@ -142,6 +145,7 @@
   }
 
   async function setScene(e) {
+    isLoaded = false;
     const monthNames = ["januari", "februari", "maart", "april", "mei", "juni",
       "juli", "augustus", "september", "oktober", "november", "december"
     ];
@@ -161,6 +165,7 @@
       await sendCommand('SetSceneItemProperties', {'scene-name': beginDienst, 'item' : 'Datum', 'position': {'x': posX, 'y': posY}});
     }
     await sendCommand('SetCurrentScene', { 'scene-name': nextScene });
+    isLoaded = true;
   }
 
   async function setCameraProfile(profiel, avond){
@@ -187,13 +192,35 @@
     await sendCommandToLumens(presetUrl, JSON.stringify({"cmd":"campresetrecall", "memnum": preset.preset}), camera);
   }
 
+  async function powerModeCameras(){
+    isLoaded = false;
+    for (let key in cameras){
+      let camera = cameras[key];
+      let configUrl =  "http://"+ camera.ip +"/cgi-bin/lums_configuration.cgi";
+      if (cameraOn){
+        await sendCommandToLumens(configUrl, JSON.stringify({"cmd": "campowerModeAction", "powermode": "0"}), camera);
+      } else{
+        await sendCommandToLumens(configUrl, JSON.stringify({"cmd": "campowerModeAction", "powermode": "1"}), camera);
+      }
+    }
+    isLoaded = true;
+  }
+
+
   async function sendCommandToLumens(url, body, camera){
     const options = {
       mode: 'no-cors',
       credentials: 'include',
-      method: 'post',
+      method: 'POST',
+      referrerPolicy: "unsafe-url",
       headers: {
-        'Set-Cookie': 'userName='+camera.user+'; passWord='+camera.password+'; SameSite=Strict;'
+        "accept": "application/json, text/javascript, */*; q=0.01",
+        "accept-language": "nl-NL,nl;q=0.9,en-US;q=0.8,en;q=0.7",
+        "cache-control": "no-cache",
+        "content-type": "application/json; charset=UTF-8",
+        "pragma": "no-cache",
+        "x-requested-with": "XMLHttpRequest",
+        "Cookie": "Cookie: userName="+camera.user+"; passWord="+camera.password+";"
       },
       body: body
     }
@@ -330,6 +357,7 @@
       console.log(e);
       errorMessage = e.description;
     }
+    isLoaded = true;
   }
 
   async function disconnect() {
@@ -360,13 +388,14 @@
     if(compareVersions(version, OBS_WEBSOCKET_LATEST_VERSION) < 0) {
       alert('You are running an outdated OBS-websocket (version ' + version + '), please upgrade to the latest version for full compatibility.');
     }
+    isLoaded = false;
     await sendCommand('SetHeartbeat', { enable: true });
     await getStudioMode();
     await updateScenes();
     await getScreenshot();
     await getMuteStatus();
     await setAudioDevice();
-
+    isLoaded = true;
     document.querySelector('#program').classList.remove('is-hidden');
   });
 
@@ -426,6 +455,14 @@
 <svelte:head>
   <title>Hillegonda stream app</title>
 </svelte:head>
+
+<div class:loaded={isLoaded} class:loading={!isLoaded} id="loader-wrapper">
+  <div id="loader"></div>
+
+  <div class="loader-section section-left"></div>
+  <div class="loader-section section-right"></div>
+
+</div>
 
 <nav class="navbar is-info is-fixed-top" role="navigation" aria-label="main navigation">
   <div class="navbar-brand">
@@ -569,7 +606,26 @@
           </span>
       </a>
     </div>
-
+    <div class="navbar-item">
+      <!-- svelte-ignore a11y-missing-attribute -->
+      <a class:is-light={!isStudioMode} class="button is-link" on:click={toggleStudioMode} title="Toggle Studio Mode">
+          <span class="icon">
+            <Icon path={mdiBorderVertical} />
+          </span>
+      </a>
+    </div>
+    <div class="navbar-item">
+      <!-- svelte-ignore a11y-missing-attribute -->
+      <a class:is-danger={isMuted} class:is-primary={!isMuted} class="button" on:click={toggleMute} title="Toggle Mute">
+          <span class="icon">
+            {#if isMuted}
+              <Icon path={mdiSpeakerOff} />
+            {:else}
+              <Icon path={mdiSpeaker} />
+            {/if}
+          </span>
+      </a>
+    </div>
     <div class="navbar-item">
       <!-- svelte-ignore a11y-missing-attribute -->
       <a class="button is-info is-light" disabled>
@@ -596,26 +652,6 @@
     </div>
     <div class="navbar-item">
       <!-- svelte-ignore a11y-missing-attribute -->
-      <a class:is-light={!isStudioMode} class="button is-link" on:click={toggleStudioMode} title="Toggle Studio Mode">
-          <span class="icon">
-            <Icon path={mdiBorderVertical} />
-          </span>
-      </a>
-    </div>
-    <div class="navbar-item">
-      <!-- svelte-ignore a11y-missing-attribute -->
-      <a class:is-danger={isMuted} class:is-primary={!isMuted} class="button" on:click={toggleMute} title="Toggle Mute">
-          <span class="icon">
-            {#if isMuted}
-              <Icon path={mdiSpeakerOff} />
-            {:else}
-              <Icon path={mdiSpeaker} />
-            {/if}
-          </span>
-      </a>
-    </div>
-    <div class="navbar-item">
-      <!-- svelte-ignore a11y-missing-attribute -->
       <a class:is-primary={isOchtend} class="button" on:click={setCameraProfile(ochtendProfiel, false)} title="Ochtend profiel camera">
           <span class="icon">
             <Icon path={mdiWhiteBalanceSunny} />
@@ -630,5 +666,17 @@
           </span>
       </a>
     </div>
+  </div>
+  <div class="navbar-item">
+    <!-- svelte-ignore a11y-missing-attribute -->
+    <a class:is-danger={!cameraOn} class:is-primary={cameraOn} class="button" on:click={powerModeCameras} title="Toggle Camera">
+        <span class="icon">
+          {#if cameraOn}
+            <Icon path={mdiCamera} />
+          {:else}
+            <Icon path={mdiCameraOff} />
+          {/if}
+        </span>
+    </a>
   </div>
 </nav>

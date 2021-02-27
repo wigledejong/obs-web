@@ -9,6 +9,7 @@ import nodePolyfills from 'rollup-plugin-node-polyfills';
 import html from '@rollup/plugin-html';
 import json from '@rollup/plugin-json';
 
+
 const production = !process.env.ROLLUP_WATCH;
 const version = String(require('child_process').execSync('git rev-parse --short HEAD')).trim(); // append short git commit to bundles
 
