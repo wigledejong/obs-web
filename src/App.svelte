@@ -49,7 +49,7 @@
     avondProfiel = obsConfig.avondProfiel;
     ochtendProfiel = obsConfig.ochtendProfiel;
     datum = new Date();
-    if(datum.getHours() < 17){
+    if(datum.getHours() < 16){
       await setCameraProfile(ochtendProfiel, false);
     }
     else {
