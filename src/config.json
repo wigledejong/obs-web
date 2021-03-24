@@ -43,14 +43,14 @@
   "avondProfiel" : {
     "gammanameindex" : "3",
     "brightnessnameindex": "7",
-    "huenameindex": "8",
-    "saturationnameindex": "3",
+    "huenameindex": "10",
+    "saturationnameindex": "2",
     "sharpnessnameindex": "7"
   },
   "ochtendProfiel" : {
     "gammanameindex" : "3",
     "brightnessnameindex": "7",
-    "huenameindex": "8",
+    "huenameindex": "10",
     "saturationnameindex": "2",
     "sharpnessnameindex": "7"
   }

@@ -151,7 +151,9 @@
     ];
     nextScene = e.currentTarget.textContent;
 
-    await setCameraPreset(nextScene);
+    if(nextScene != "Collecte"){
+	await setCameraPreset(nextScene); 
+    }
 
     if(nextScene == beginDienst) {
       var day = datum.getDate();
