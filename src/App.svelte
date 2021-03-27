@@ -4,20 +4,45 @@
   // Imports
   import { onMount } from 'svelte';
   import './style.scss';
-  import { mdiCameraOff, mdiCamera, mdiWeatherNight, mdiWhiteBalanceSunny, mdiCommentTextOutline, mdiSpeakerOff, mdiSpeaker, mdiBorderVertical,
+  import { mdiCctv, mdiCameraOff, mdiCamera, mdiWeatherNight, mdiWhiteBalanceSunny, mdiCommentTextOutline, mdiSpeakerOff, mdiSpeaker, mdiBorderVertical,
     mdiAccessPoint, mdiAccessPointOff, mdiRecord, mdiStop, mdiCheckboxMarked, mdiAlert, mdiCloseOctagon} from '@mdi/js';
   import Icon from 'mdi-svelte';
   import compareVersions from 'compare-versions';
-  import * as obsConfig from './config.json';
 
   // Import OBS-websocket
   import OBSWebSocket from 'obs-websocket-js';
   const obs = new OBSWebSocket();
 
+  import { ATEM } from "./atem.js";
+
+
   // Import local components
   import SceneView from './SceneView.svelte';
 
   onMount(async () => {
+    await fetch('http://192.168.178.28:8081/config')
+      .then(res => res.json())
+      .then(data => appConfig = data)
+    console.log(appConfig);
+    host = `${appConfig.host}`;
+    password = `${appConfig.password}`;
+    configuredStreamBitrate = `${appConfig.configuredStreamBitrate}`;
+    beginDienst = `${appConfig.beginDienst}`;
+    audioSource = `${appConfig.audioSource}`;
+    audioDevice = `${appConfig.audioDevice}`;
+    screenSizeX = `${appConfig.screenSizeX}`;
+    screenSizeY = `${appConfig.screenSizeY}`;
+    cameras = appConfig.cameras;
+    presetsScene = appConfig.presetsScene;
+    presetsConfig = appConfig.presets;
+    sceneAndCamera = appConfig.sceneAndCamera;
+    avondProfiel = appConfig.avondProfiel;
+    ochtendProfiel = appConfig.ochtendProfiel;
+    for (var key in presetsConfig){
+      presets.push(presetsConfig[key]);
+    }
+
+
     isLoaded = true;
     if ('serviceWorker' in navigator) {
       await navigator.serviceWorker.register('/service-worker.js');
@@ -35,19 +60,7 @@
       });
     }
 
-    // Connect with parameters in config.json
-    host = `${obsConfig.host}`;
-    password = `${obsConfig.password}`;
-    configuredStreamBitrate = `${obsConfig.configuredStreamBitrate}`;
-    beginDienst = `${obsConfig.beginDienst}`;
-    audioSource = `${obsConfig.audioSource}`;
-    audioDevice = `${obsConfig.audioDevice}`;
-    screenSizeX = `${obsConfig.screenSizeX}`;
-    screenSizeY = `${obsConfig.screenSizeY}`;
-    cameras = obsConfig.cameras;
-    presets = obsConfig.presets;
-    avondProfiel = obsConfig.avondProfiel;
-    ochtendProfiel = obsConfig.ochtendProfiel;
+
     datum = new Date();
     if(datum.getHours() < 16){
       await setCameraProfile(ochtendProfiel, false);
@@ -87,38 +100,91 @@
     isOchtend,
     isAvond,
     isMuted,
-    wakeLock,
     previewClass,
     cameraOn,
     datum,
     isLoaded = false;
   let scenes =[];
+  let switchers = [];
   let scenesList = [];
   let avondProfiel = [];
   let ochtendProfiel = [];
   let cameras = [];
+  let presetsScene = [];
   let presets = [];
+  let presetsConfig = [];
   let configuredStreamBitrate,
     streamBitrate,
     screenSizeX,
     screenSizeY,
     bitrateStatus,
-    camera1OverzichtPreset,
-    camera1ZoomPreset= 0;
+    intervalID = 0;
   let host,
     password,
     errorMessage,
     audioSource,
     audioDevice,
+    savedPreset,
     beginDienst= '';
-  $: sceneChunks = Array(Math.ceil(scenes.length / 4))
-    .fill()
-    .map((_, index) => index * 4)
-    .map(begin => scenes.slice(begin, begin + 4));
+  let atemWebSocket;
+  let appConfig;
+  let sceneChunks;
+  let sceneAndCamera = true;
 
+  $: if(sceneAndCamera){
+      sceneChunks = Array(Math.ceil(scenes.length / 4))
+      .fill()
+      .map((_, index) => index * 4)
+      .map(begin => scenes.slice(begin, begin + 4));
+    } else {
+      let scenesPresets = scenes.concat(presets)
+      sceneChunks = Array(Math.ceil(scenesPresets.length / 4))
+      .fill()
+      .map((_, index) => index * 4)
+      .map(begin => scenesPresets.slice(begin, begin + 4));
+   }
 
   function toggleLiturgieMode() {
     isLiturgieMode = !isLiturgieMode;
+  }
+
+  function connectAtem() {
+    console.log("Opening ATEM websocket...");
+    atemWebSocket = new WebSocket("ws://"+ appConfig.atemServer + "/atemWebSocket");
+    atemWebSocket.addEventListener("open", function(event) {
+      console.log("Websocket ATEM opened");
+      intervalID = clearTimeout(intervalID);
+      switchers[0] = new ATEM();
+      switchers[0].setWebsocket(atemWebSocket);
+      // update svelte
+      atemWebSocket = atemWebSocket;
+    });
+    atemWebSocket.addEventListener("message", function(event) {
+      let data = JSON.parse(event.data);
+      let device = data.device || 0;
+      console.log(data);
+      switch (data.method) {
+        case 'connect':
+          switchers[device].connected = true;
+          break;
+        case 'disconnect':
+          switchers[device].connected = false;
+          break;
+        default:
+          switchers[device].connected = true;
+          switchers[device].state = data;
+      }
+      return data;
+
+    });
+    atemWebSocket.addEventListener("error", function() {
+      console.log("Websocket ATEM error");
+      intervalID = setTimeout(connectAtem, 1000);
+    });``
+    atemWebSocket.addEventListener("close", function() {
+      console.log("Websocket ATEM closed");
+      intervalID = setTimeout(connectAtem, 1000);
+    });
   }
 
   async function toggleStudioMode() {
@@ -139,6 +205,7 @@
     await sendCommand('TriggerHotkeyBySequence', { 'keyId':'OBS_KEY_N', 'keyModifiers' : { 'shift': true, 'control': true } } )
     console.log('Next Slide');
   }
+
   async function previousSlide() {
     await sendCommand('TriggerHotkeyBySequence', { 'keyId':'OBS_KEY_P', 'keyModifiers' : { 'shift': true, 'control': true } } )
     console.log('Previous Slide');
@@ -151,23 +218,61 @@
     ];
     nextScene = e.currentTarget.textContent;
 
-    if(nextScene != "Collecte"){
-	await setCameraPreset(nextScene); 
+    if (nextScene != "Collecte") {
+     if(sceneAndCamera){
+       let preset = presetsScene[nextScene];
+       if (!preset) {
+         preset = presetsScene["default"];
+       }
+       await setCameraPreset(preset);
+     }
     }
 
-    if(nextScene == beginDienst) {
+    if (nextScene == beginDienst) {
       var day = datum.getDate();
       var month = monthNames[datum.getMonth()];
       var year = datum.getFullYear();
-      await sendCommand('SetTextFreetype2Properties', { 'source': 'Datum', 'text': day +' '+month+' '+year,
-        'font': { 'face': 'Arial', 'flags': 0, 'size': 140, 'style': 'Regular' }});
-      let data = await sendCommand('GetSceneItemProperties', {'scene-name': beginDienst, 'item' : 'Datum'});
-      let posX = (screenSizeX/2) - (data.sourceWidth/2);
-      let posY = (screenSizeY/2) - (data.sourceHeight/2);
-      await sendCommand('SetSceneItemProperties', {'scene-name': beginDienst, 'item' : 'Datum', 'position': {'x': posX, 'y': posY}});
+      await sendCommand('SetTextFreetype2Properties', {
+        'source': 'Datum', 'text': day + ' ' + month + ' ' + year,
+        'font': {'face': 'Arial', 'flags': 0, 'size': 140, 'style': 'Regular'}
+      });
+      let data = await sendCommand('GetSceneItemProperties', {'scene-name': beginDienst, 'item': 'Datum'});
+      let posX = (screenSizeX / 2) - (data.sourceWidth / 2);
+      let posY = (screenSizeY / 2) - (data.sourceHeight / 2);
+      await sendCommand('SetSceneItemProperties', {
+        'scene-name': beginDienst,
+        'item': 'Datum',
+        'position': {'x': posX, 'y': posY}
+      });
     }
-    await sendCommand('SetCurrentScene', { 'scene-name': nextScene });
+    await sendCommand('SetCurrentScene', {'scene-name': nextScene});
     isLoaded = true;
+  }
+
+
+  async function setPreset(e){
+    isLoaded = false;
+    let nextPreset = e.currentTarget.textContent;
+    await setCameraPreset(presetsConfig[nextPreset]);
+
+    const options = {
+      method: 'POST',
+      headers: new Headers({'content-type': 'application/json'}),
+      mode: 'no-cors',
+      body: nextPreset
+    };
+
+    await fetch('http://'+ appConfig.atemServer +'/savePreset', options);
+    getSavedPreset();
+    isLoaded = true;
+  }
+
+  async function getSavedPreset(){
+    let preset = '';
+    await fetch('http://'+ appConfig.atemServer +'/getPreset')
+      .then(res => res.text())
+      .then(data => preset = data);
+    savedPreset = preset;
   }
 
   async function setCameraProfile(profiel, avond){
@@ -176,7 +281,9 @@
       let profileUrl = "http://"+ camera.ip +"/cgi-bin/lums_piceffect.cgi";
       for (let key of Object.keys(profiel)) {
         let value = profiel[key];
-        await sendCommandToLumens(profileUrl, JSON.stringify({"cmd": key, "value": value}), camera);
+        if(appConfig.connectToLumens){
+          await sendCommandToLumens(profileUrl, JSON.stringify({"cmd": key, "value": value}), camera);
+        }
       }
     }
 
@@ -184,14 +291,17 @@
     isOchtend = !avond;
   }
 
-  async function setCameraPreset(scene){
-    let preset = presets[scene];
-    if(!preset){
-      preset = presets["default"];
+  async function setCameraPreset(preset){
+    console.log(preset);
+    if(appConfig.connectToAtem){
+      switchers[0].changeProgramInput(preset.atemInput);
     }
     let camera = cameras[preset.camera];
     let presetUrl =  "http://"+ camera.ip +"/cgi-bin/lums_configuration.cgi";
-    await sendCommandToLumens(presetUrl, JSON.stringify({"cmd":"campresetrecall", "memnum": preset.preset}), camera);
+    console.log("Connect To Lumens:" + appConfig.connectToLumens);
+    if(appConfig.connectToLumens){
+      await sendCommandToLumens(presetUrl, JSON.stringify({"cmd":"campresetrecall", "memnum": preset.preset}), camera);
+    }
   }
 
   async function powerModeCameras(){
@@ -200,14 +310,17 @@
       let camera = cameras[key];
       let configUrl =  "http://"+ camera.ip +"/cgi-bin/lums_configuration.cgi";
       if (cameraOn){
-        await sendCommandToLumens(configUrl, JSON.stringify({"cmd": "campowerModeAction", "powermode": "0"}), camera);
+        if(appConfig.connectToLumens){
+          await sendCommandToLumens(configUrl, JSON.stringify({"cmd": "campowerModeAction", "powermode": "0"}), camera);
+        }
       } else{
-        await sendCommandToLumens(configUrl, JSON.stringify({"cmd": "campowerModeAction", "powermode": "1"}), camera);
+        if(appConfig.connectToLumens){
+          await sendCommandToLumens(configUrl, JSON.stringify({"cmd": "campowerModeAction", "powermode": "1"}), camera);
+        }
       }
     }
     isLoaded = true;
   }
-
 
   async function sendCommandToLumens(url, body, camera){
     const options = {
@@ -302,7 +415,8 @@
     }else if (sceneRows <= 5){
       previewClass = 'preview-5row';
     }
-
+    getSavedPreset();
+    console.log(savedPreset);
     console.log('Scenes updated');
   }
 
@@ -343,6 +457,9 @@
   }
 
   async function connect() {
+    if(appConfig.connectToAtem){
+      connectAtem();
+    }
     host = host || 'localhost:4444';
     let secure = location.protocol === 'https:' || host.endsWith(':443');
     if (host.indexOf('://') !== -1) {
@@ -372,7 +489,7 @@
     if (event.key !== 'Enter') return;
     await connect();
     event.preventDefault();
-  }
+  }``
 
   // OBS events
   obs.on('ConnectionClosed', () => {
@@ -568,9 +685,21 @@
                   <p class="subtitle has-text-centered is-size-7-mobile">{sc.name}</p>
                 </a>
               {:else}
-                <a on:click={isStudioMode ? setPreview : setScene} class="tile is-child is-info notification">
-                  <p class="subtitle has-text-centered is-size-7-mobile">{sc.name}</p>
-                </a>
+                {#if !sc.preset}
+                  <a on:click={isStudioMode ? setPreview : setScene} class="tile is-child is-info notification">
+                    <p class="subtitle has-text-centered is-size-7-mobile">{sc.name}</p>
+                  </a>
+                {:else}
+                  {#if savedPreset == sc.name}
+                    <a on:click={setPreset} class="tile is-child is-primary notification">
+                         <p class="subtitle has-text-centered is-size-7-mobile"><Icon path={mdiCctv} />{sc.name}</p>
+                    </a>
+                  {:else}
+                    <a on:click={setPreset} class="tile is-child notification">
+                      <p class="subtitle has-text-centered is-size-7-mobile"><Icon path={mdiCctv} />{sc.name}</p>
+                    </a>
+                  {/if}
+                {/if}
               {/if}
             </div>
           {/each}
