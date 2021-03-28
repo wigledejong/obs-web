@@ -317,14 +317,14 @@
 
   async function setCameraPreset(preset){
     console.log(preset);
-    if(appConfig.connectToAtem){
-      switchers[0].changeProgramInput(preset.atemInput);
-    }
     let camera = cameras[preset.camera];
     let presetUrl =  "http://"+ camera.ip +"/cgi-bin/lums_configuration.cgi";
     console.log("Connect To Lumens:" + appConfig.connectToLumens);
     if(appConfig.connectToLumens){
       await sendCommandToLumens(presetUrl, JSON.stringify({"cmd":"campresetrecall", "memnum": preset.preset}), camera);
+    }
+    if(appConfig.connectToAtem){
+      switchers[0].changeProgramInput(preset.atemInput);
     }
   }
 

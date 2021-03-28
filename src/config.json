@@ -96,7 +96,7 @@
       "camera" : "camera2",
       "preset" : "1",
       "atemInput": 2
-    }
+    },
     "Laptop":  {
       "name": "Laptop",
       "camera" : "camera1",
