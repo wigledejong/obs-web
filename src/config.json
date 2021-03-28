@@ -1,6 +1,6 @@
 {
   "atemServer": "172.16.110.26:8081",
-  "connectToAtem": false,
+  "connectToAtem": true,
   "connectToLumens": true,
   "host": "172.16.110.26:4444",
   "password": "Hillegondakerk",
@@ -13,6 +13,11 @@
   "cameras" : {
     "camera1": {
       "ip": "172.16.110.34",
+      "user": "admin",
+      "password": "9999"
+    },
+    "camera2": {
+      "ip": "172.16.110.28",
       "user": "admin",
       "password": "9999"
     }
@@ -50,32 +55,50 @@
     }
   },
   "presets" : {
-    "Zangers Rechts":  {
-      "name": "Zangers Rechts",
+    "Zangers1":  {
+      "name": "Zangers1",
       "camera" : "camera1",
       "preset" : "3",
       "atemInput": 1
     },
-    "Zangers Links":  {
-      "name": "Zangers Links",
-      "camera" : "camera1",
-      "preset" : "4",
+    "Zangers2":  {
+      "name": "Zangers2",
+      "camera" : "camera2",
+      "preset" : "2",
       "atemInput": 2
     },
-    "Zangers Midden":  {
-      "name": "Zangers Midden",
+    "Muzikanten1":  {
+      "name": "Muzikanten1",
       "camera" : "camera1",
-      "preset" : "1",
-      "atemInput": 3
+      "preset" : "6",
+      "atemInput": 1
+    },
+    "Muzikanten2":  {
+      "name": "Muzikanten2",
+      "camera" : "camera2",
+      "preset" : "2",
+      "atemInput": 2
     },
     "Predikant":  {
       "name": "Predikant",
       "camera" : "camera1",
       "preset" : "2",
-      "atemInput": 3
+      "atemInput": 1
     },
-    "Predikant2":  {
-      "name": "Predikant2",
+    "Overzicht":  {
+      "name": "Overzicht",
+      "camera" : "camera1",
+      "preset" : "1",
+      "atemInput": 1
+    },
+    "Overzicht2":  {
+      "name": "Overzicht2",
+      "camera" : "camera2",
+      "preset" : "1",
+      "atemInput": 2
+    }
+    "Laptop":  {
+      "name": "Laptop",
       "camera" : "camera1",
       "preset" : "2",
       "atemInput": 3
