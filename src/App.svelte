@@ -295,7 +295,6 @@
     };
 
     await fetch('http://'+ appConfig.atemServer +'/setSceneAndCamera', options);
-    loadConfig();
     updateScenes();
     isLoaded = true;
   }

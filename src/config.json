@@ -1,5 +1,5 @@
 {
-  "atemServer": "192.168.178.28:8081",
+  "atemServer": "172.16.110.26:8081",
   "connectToAtem": false,
   "connectToLumens": true,
   "host": "172.16.110.26:4444",
@@ -66,6 +66,18 @@
       "name": "Zangers Midden",
       "camera" : "camera1",
       "preset" : "1",
+      "atemInput": 3
+    },
+    "Predikant":  {
+      "name": "Predikant",
+      "camera" : "camera1",
+      "preset" : "2",
+      "atemInput": 3
+    },
+    "Predikant2":  {
+      "name": "Predikant2",
+      "camera" : "camera1",
+      "preset" : "2",
       "atemInput": 3
     }
   },
