@@ -13,7 +13,8 @@ var config = new SelfReloadJSON('src/config.json');
 let atem;
 const switchers = [];
 
-let preset ='Zangers Rechts';
+let preset ='';
+let sceneAndCamera= true;
 
 let CLIENTS = expressWs.getWss().clients;
 
@@ -65,6 +66,17 @@ app.get('/getPreset', function(request, response){
 app.post('/savePreset', function(request, response){
   console.log("Preset gezet: " + request.body);
   preset = request.body;
+  response.send("oke");
+});
+
+app.get('/getSceneAndCamera', function(request, response){
+  console.log("SceneAndCamera opgevraagd: " + sceneAndCamera);
+  response.send(sceneAndCamera);
+});
+
+app.post('/setSceneAndCamera', function(request, response){
+  console.log("SceneAndCamera gezet: " + request.body);
+  sceneAndCamera = request.body;
   response.send("oke");
 });
 

@@ -4,7 +4,7 @@
   // Imports
   import { onMount } from 'svelte';
   import './style.scss';
-  import { mdiCctv, mdiCameraOff, mdiCamera, mdiWeatherNight, mdiWhiteBalanceSunny, mdiCommentTextOutline, mdiSpeakerOff, mdiSpeaker, mdiBorderVertical,
+  import { mdiCameraBurst, mdiCctv, mdiCameraOff, mdiCamera, mdiWeatherNight, mdiWhiteBalanceSunny, mdiCommentTextOutline, mdiSpeakerOff, mdiSpeaker, mdiBorderVertical,
     mdiAccessPoint, mdiAccessPointOff, mdiRecord, mdiStop, mdiCheckboxMarked, mdiAlert, mdiCloseOctagon} from '@mdi/js';
   import Icon from 'mdi-svelte';
   import compareVersions from 'compare-versions';
@@ -35,10 +35,13 @@
     cameras = appConfig.cameras;
     presetsScene = appConfig.presetsScene;
     presetsConfig = appConfig.presets;
-    sceneAndCamera = appConfig.sceneAndCamera;
     avondProfiel = appConfig.avondProfiel;
     ochtendProfiel = appConfig.ochtendProfiel;
-    for (var key in presetsConfig){
+    await fetch('http://192.168.178.28:8081/getSceneAndCamera')
+      .then(res => res.json())
+      .then(data => sceneAndCamera = data)
+
+    for (let key in presetsConfig){
       presets.push(presetsConfig[key]);
     }
 
@@ -137,11 +140,11 @@
       .map((_, index) => index * 4)
       .map(begin => scenes.slice(begin, begin + 4));
     } else {
-      let scenesPresets = scenes.concat(presets)
-      sceneChunks = Array(Math.ceil(scenesPresets.length / 4))
+      scenes = scenes.concat(presets);
+      sceneChunks = Array(Math.ceil(scenes.length / 4))
       .fill()
       .map((_, index) => index * 4)
-      .map(begin => scenesPresets.slice(begin, begin + 4));
+      .map(begin => scenes.slice(begin, begin + 4));
    }
 
   function toggleLiturgieMode() {
@@ -275,6 +278,22 @@
     savedPreset = preset;
   }
 
+  async function setSceneAndCamera(){
+    isLoaded = false;
+    sceneAndCamera = !sceneAndCamera;
+
+    const options = {
+      method: 'POST',
+      headers: new Headers({'content-type': 'application/json'}),
+      mode: 'no-cors',
+      body: sceneAndCamera
+    };
+
+    await fetch('http://'+ appConfig.atemServer +'/setSceneAndCamera', options);
+    updateScenes();
+    isLoaded = true;
+  }
+
   async function setCameraProfile(profiel, avond){
     for (let key in cameras){
       let camera = cameras[key];
@@ -401,7 +420,14 @@
           // before the socket has recieved confirmation of disabled studio mode.
         });
     }
-    let numberOfScenes = scenes.length;
+    let numberOfScenes = 0;
+    if(!sceneAndCamera){
+      numberOfScenes = scenes.length + presets.length;
+    } else{
+      numberOfScenes = scenes.length;
+    }
+
+
     let sceneRows = numberOfScenes / 4;
 
     if (sceneRows <= 1){
@@ -695,7 +721,7 @@
                          <p class="subtitle has-text-centered is-size-7-mobile"><Icon path={mdiCctv} />{sc.name}</p>
                     </a>
                   {:else}
-                    <a on:click={setPreset} class="tile is-child notification">
+                    <a on:click={setPreset} class="tile is-child is-info notification">
                       <p class="subtitle has-text-centered is-size-7-mobile"><Icon path={mdiCctv} />{sc.name}</p>
                     </a>
                   {/if}
@@ -728,6 +754,14 @@
   </div>
 </section>
 <nav class="navbar is-info is-fixed-bottom" role="navigation" aria-label="main navigation">
+  <div class="navbar-item">
+    <!-- svelte-ignore a11y-missing-attribute -->
+    <a class:is-danger={!sceneAndCamera} class:is-primary={sceneAndCamera} class="button" on:click={setSceneAndCamera} title="Camera Presets">
+        <span class="icon">
+            <Icon path={mdiCameraBurst} />
+        </span>
+    </a>
+  </div>
   <div class="navbar-start is-justify-content-center is-flex-grow-1">
     <div class="navbar-item">
       <!-- svelte-ignore a11y-missing-attribute -->
