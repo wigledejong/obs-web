@@ -20,36 +20,8 @@
   import SceneView from './SceneView.svelte';
 
   onMount(async () => {
-    let url  = window.location + "";
-    url = url.slice(0, url.lastIndexOf("/"));
-    url = url.slice(0, url.lastIndexOf(":"));
-    await fetch(url+':8081/config')
-      .then(res => res.json())
-      .then(data => appConfig = data)
-    console.log(appConfig);
-    host = `${appConfig.host}`;
-    password = `${appConfig.password}`;
-    configuredStreamBitrate = `${appConfig.configuredStreamBitrate}`;
-    beginDienst = `${appConfig.beginDienst}`;
-    audioSource = `${appConfig.audioSource}`;
-    audioDevice = `${appConfig.audioDevice}`;
-    screenSizeX = `${appConfig.screenSizeX}`;
-    screenSizeY = `${appConfig.screenSizeY}`;
-    cameras = appConfig.cameras;
-    presetsScene = appConfig.presetsScene;
-    presetsConfig = appConfig.presets;
-    avondProfiel = appConfig.avondProfiel;
-    ochtendProfiel = appConfig.ochtendProfiel;
-    await fetch(url + ':8081/getSceneAndCamera')
-      .then(res => res.json())
-      .then(data => sceneAndCamera = data)
-
-    for (let key in presetsConfig){
-      presets.push(presetsConfig[key]);
-    }
-
-
     isLoaded = true;
+    await loadConfig();
     if ('serviceWorker' in navigator) {
       await navigator.serviceWorker.register('/service-worker.js');
     }
@@ -217,6 +189,36 @@
     console.log('Previous Slide');
   }
 
+  async function loadConfig(){
+    let url  = window.location + "";
+    url = url.slice(0, url.lastIndexOf("/"));
+    url = url.slice(0, url.lastIndexOf(":"));
+    await fetch(url+':8081/config')
+      .then(res => res.json())
+      .then(data => appConfig = data)
+    console.log(appConfig);
+    host = `${appConfig.host}`;
+    password = `${appConfig.password}`;
+    configuredStreamBitrate = `${appConfig.configuredStreamBitrate}`;
+    beginDienst = `${appConfig.beginDienst}`;
+    audioSource = `${appConfig.audioSource}`;
+    audioDevice = `${appConfig.audioDevice}`;
+    screenSizeX = `${appConfig.screenSizeX}`;
+    screenSizeY = `${appConfig.screenSizeY}`;
+    cameras = appConfig.cameras;
+    presetsScene = appConfig.presetsScene;
+    presetsConfig = appConfig.presets;
+    avondProfiel = appConfig.avondProfiel;
+    ochtendProfiel = appConfig.ochtendProfiel;
+    await fetch(url + ':8081/getSceneAndCamera')
+      .then(res => res.json())
+      .then(data => sceneAndCamera = data)
+
+    for (let key in presetsConfig){
+      presets.push(presetsConfig[key]);
+    }
+  }
+
   async function setScene(e) {
     isLoaded = false;
     const monthNames = ["januari", "februari", "maart", "april", "mei", "juni",
@@ -293,6 +295,7 @@
     };
 
     await fetch('http://'+ appConfig.atemServer +'/setSceneAndCamera', options);
+    loadConfig();
     updateScenes();
     isLoaded = true;
   }
