@@ -1,8 +1,8 @@
 {
   "atemServer": "192.168.178.28:8081",
-  "connectToAtem": true,
-  "connectToLumens": false,
-  "host": "192.168.178.28:4444",
+  "connectToAtem": false,
+  "connectToLumens": true,
+  "host": "172.16.110.26:4444",
   "password": "Hillegondakerk",
   "configuredStreamBitrate": 5000,
   "beginDienst": "Begin dienst",

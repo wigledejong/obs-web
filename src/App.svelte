@@ -20,7 +20,10 @@
   import SceneView from './SceneView.svelte';
 
   onMount(async () => {
-    await fetch('http://192.168.178.28:8081/config')
+    let url  = window.location + "";
+    url = url.slice(0, url.lastIndexOf("/"));
+    url = url.slice(0, url.lastIndexOf(":"));
+    await fetch(url+':8081/config')
       .then(res => res.json())
       .then(data => appConfig = data)
     console.log(appConfig);
