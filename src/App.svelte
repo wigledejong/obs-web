@@ -40,7 +40,7 @@
     presetsConfig = appConfig.presets;
     avondProfiel = appConfig.avondProfiel;
     ochtendProfiel = appConfig.ochtendProfiel;
-    await fetch('http://192.168.178.28:8081/getSceneAndCamera')
+    await fetch(url + ':8081/getSceneAndCamera')
       .then(res => res.json())
       .then(data => sceneAndCamera = data)
 
