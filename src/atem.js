@@ -276,14 +276,14 @@ class ATEM {
   sendMessage(data) {
     if (this.websocket.readyState == WebSocket.OPEN) {
       const message = JSON.stringify(data);
-      // console.log('sendMessage', message);
+      console.log('sendMessage', message);
       this.websocket.send(message);
     } else {
       console.warn('Websocket is closed. Cannot send message.')
     }
   }
 
-  get visibleChannels() {
+  getVisibleChannels() {
     let visibleChannels = [];
     // update channels
     for (let id in this.state.channels) {
@@ -325,6 +325,23 @@ class ATEM {
       }
     }
     return visibleChannels;
+  }
+
+  getAudio() {
+    let visibleAudioChannels = [];
+    // update channels
+    for (let id in this.state.audio.channels) {
+      const audio = this.state.audio.channels[id];
+      audio.id = id;
+      audio.device = this.state.device;
+      audio.input = id;
+      visibleAudioChannels.push(audio);
+    }
+    return visibleAudioChannels;
+  }
+
+  returnProgramChannel() {
+    return this.state.video.ME[0].programInput;
   }
 
   isProgramChannel(channel) {
@@ -401,6 +418,7 @@ class ATEM {
   autoDownstreamKey(number) {
     this.sendMessage({ method: 'autoDownstreamKey', params: { device: this.state.device, number } });
   }
+
   fadeToBlack() {
     this.sendMessage({ method: 'fadeToBlack', params: { device: this.state.device } });
   }

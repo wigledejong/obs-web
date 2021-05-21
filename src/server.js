@@ -3,7 +3,7 @@ const ATEM        = require('applest-atem');
 const atemConfig  = require('./atemConfig.json');
 const fs          = require('fs');
 const SelfReloadJSON = require('self-reload-json');
-const cors = require('cors')
+const cors = require('cors');
 
 const app = express();
 var expressWs = require('express-ws')(app);
@@ -13,8 +13,8 @@ var config = new SelfReloadJSON('src/config.json');
 let atem;
 const switchers = [];
 
-let preset ='';
-let sceneAndCamera= true;
+let preset = '';
+let uitzending = '';
 
 let CLIENTS = expressWs.getWss().clients;
 
@@ -58,25 +58,33 @@ app.get('/config', function(request, response){
   response.send(config);
 });
 
+app.post('/cameraMode', function (request, response){
+  ip = request.body;
+  
+});
+
 app.get('/getPreset', function(request, response){
   console.log("Preset opgevraagd: " + preset);
   response.send(preset);
 });
 
 app.post('/savePreset', function(request, response){
-  console.log("Preset gezet: " + request.body);
+  console.log("Preset wordt opgeslagen: " + request.body);
   preset = request.body;
   response.send("oke");
 });
 
-app.get('/getSceneAndCamera', function(request, response){
-  console.log("SceneAndCamera opgevraagd: " + sceneAndCamera);
-  response.send(sceneAndCamera);
+app.get('/getUitzending', function (request, response) {
+  console.log("Uitzending opgevraagd: " + uitzending);
+  if (uitzending == '') {
+    uitzending = 'Kerkdienst';
+  }
+  response.send(uitzending);
 });
 
-app.post('/setSceneAndCamera', function(request, response){
-  console.log("SceneAndCamera gezet: " + request.body);
-  sceneAndCamera = request.body;
+app.post('/saveUitzending', function (request, response) {
+  console.log("Uitzending wordt opgeslagen: " + request.body);
+  uitzending = request.body;
   response.send("oke");
 });
 

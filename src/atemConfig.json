@@ -4,6 +4,6 @@
     "port": 8081
   },
   "switchers": [
-    { "type": "atem", "addr": "172.16.110.50" }
+    { "type": "atem", "addr": "172.16.110.194" }
   ]
 }
