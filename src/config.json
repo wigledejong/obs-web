@@ -50,10 +50,6 @@
       "camera": "camera2",
       "preset": "1"
     },
-    "Predikant 2": {
-      "camera": "camera2",
-      "preset": "2"
-    },
     "Zangers rechts": {
       "camera": "camera2",
       "preset": "3"
@@ -78,13 +74,9 @@
       "camera": "camera3",
       "preset": "4"
     },
-    "Belijdenis 1": {
-      "camera": "camera1",
-      "preset": "9"
-    },
-    "Belijdenis 2": {
-      "camera": "camera2",
-      "preset": "9"
+    "Einde dienst": {
+      "camera": "camera3",
+      "preset": "1"
     },
     "Collecte": {
       "camera": "Media Player 1"
@@ -95,8 +87,9 @@
   },
   "uitzendingVariant": [ "Uitvaart", "Kerkdienst", "Jongerendienst" ],
   "presetUitzending": {
-    "Uitvaart": [ "Predikant", "Predikant 2", "Overzicht midden", "Binnenkomst", "Orgel", "Overzicht boven", "Overzicht opzij", "Overzicht uitgezoomd" ],
-    "Kerkdienst": [ "Begin dienst", "Predikant", "Predikant 2", "Organist", "Orgel", "Piano", "Overzicht midden", "Overzicht opzij", "Overzicht uitgezoomd", "Zangers rechts", "Pinksterraam", "Belijdenis 1", "Belijdenis 2", "Collecte" ]
+    "Uitvaart": [ "Predikant", "Overzicht midden", "Binnenkomst", "Orgel", "Overzicht boven", "Overzicht opzij", "Overzicht uitgezoomd", "Piano" ],
+    "Kerkdienst": [ "Begin dienst", "Predikant", "Organist", "Orgel", "Piano", "Overzicht midden", "Overzicht opzij", "Overzicht uitgezoomd", "Einde dienst", "Collecte" ],
+    "Jongerendienst" : [ "Begin dienst"]
   },
   "avondProfiel" : {
     "gammanameindex" : "3",

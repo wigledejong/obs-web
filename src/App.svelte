@@ -12,30 +12,33 @@
   import { ATEM } from "./atem.js";
 
   onMount(async () => {
-  isLoaded = true;
-  await loadConfig();
-  await getSavedUitzending();
-  connectAtem();
-  await getScreenshot();
-  if ('serviceWorker' in navigator) {
-  await navigator.serviceWorker.register('/service-worker.js');
-  }
+    isLoaded = true;
+    await loadConfig();
+    await loginStreamer();
+    await streamStatus();
+    await getSavedUitzending();
+    await getSavedPreset();
+    connectAtem();
+    await getScreenshot();
+    if ('serviceWorker' in navigator) {
+      await navigator.serviceWorker.register('/service-worker.js');
+    }
 
-  // Hamburger menu
-  const $navbarBurgers = Array.prototype.slice.call(document.querySelectorAll('.navbar-burger'), 0);
-  if ($navbarBurgers.length > 0) {
-  $navbarBurgers.forEach(el => {
-  el.addEventListener('click', () => {
-  const target = document.getElementById(el.dataset.target);
-  el.classList.toggle('is-active');
-  target.classList.toggle('is-active');
-  });
-  });
-  }
+    // Hamburger menu
+    const $navbarBurgers = Array.prototype.slice.call(document.querySelectorAll('.navbar-burger'), 0);
+    if ($navbarBurgers.length > 0) {
+      $navbarBurgers.forEach(el => {
+        el.addEventListener('click', () => {
+          const target = document.getElementById(el.dataset.target);
+          el.classList.toggle('is-active');
+          target.classList.toggle('is-active');
+        });
+      });
+    }
 
-  datum = new Date();
-  if(datum.getHours() < 16){
-      await setCameraProfile(ochtendProfiel, false);
+    datum = new Date();
+    if(datum.getHours() < 16){
+        await setCameraProfile(ochtendProfiel, false);
     }
     else {
       await setCameraProfile(avondProfiel, true);
@@ -61,6 +64,7 @@
     cameraOn,
     datum,
     previewClass,
+    streaming,
     isLoaded = false;
   let switchers = [];
   let avondProfiel = [];
@@ -143,6 +147,26 @@
     presetUitzending = appConfig.presetUitzending;
   }
 
+  async function loginStreamer(){
+    await fetch('http://'+ appConfig.atemServer +'/loginStreamer');
+  }
+
+  async function startStream(){
+    await fetch('http://'+ appConfig.atemServer +'/streamen');
+  }
+
+  async function stopStream(){
+    await fetch('http://'+ appConfig.atemServer +'/streamen');
+  }    
+
+  async function streamStatus() {
+    await fetch('http://'+ appConfig.atemServer +'/streamStatus')
+      .then(res => res.json())
+      .then(data => streaming = data);
+    console.log("Status streaming: " +streaming);
+    setTimeout(streamStatus, 1000);
+  }
+
   async function setPreset(e){
     isLoaded = false;
     let nextPreset = e.currentTarget.textContent;
@@ -159,12 +183,17 @@
         }
        await changeAtemChannel(atemChannel);
        await setCameraPreset(presetsConfig["Orgel"]);
-       switchers[0].runMacro(4)
+       await runMacro(4);
     }else{
        atemChannel = camera.atemChannel;
        await setCameraPreset(preset);
        await changeAtemChannel(atemChannel);
-       switchers[0].runMacro(6);
+       console.log(nextPreset);
+       if(nextPreset == "Predikant"){
+          await runMacro(18);
+       } else{
+          await runMacro(16);
+       }
     }
 
     const options = {
@@ -219,6 +248,10 @@
     presetUitzending[savedUitzending].forEach(item => presets.push(item));
     console.log(presets);
     await calculatePreviewClass();
+  }
+
+  async function runMacro(macro) {
+    switchers[0].runMacro(macro);   
   }
 
   async function setCameraProfile(profiel, avond){
@@ -297,6 +330,22 @@
       switchers[0].runMacro(2);
         isMuted = false;
     }
+    await getStreamerStatus();
+  }
+
+  async function getScreenshot() {    
+      //document.querySelector('#program').src = "http://172.16.110.21/tmp/sbox-snapshot/sbox-quarter.jpg?v="+new Date().getTime();
+      document.querySelector('#program').src= 'http://'+ appConfig.atemServer +'/screenshot';
+      document.querySelector('#program').className = '';
+      setTimeout(getScreenshot, 500);
+  }
+
+  async function getStreamerStatus(){
+    let streamStatus = '';
+    await fetch('http://'+ appConfig.atemServer +'/streamStatus')
+      .then(res => res.json())
+      .then(data => streamStatus = data)
+    console.log(streamStatus);
   }
 
   async function calculatePreviewClass() {
@@ -310,7 +359,7 @@
 
     let presetRows = numberOfPresets / 4;
 
-    if (presetRows <= 1){
+    if (presetRows <= 1) {
       previewClass = 'preview-1row';
     }else if (presetRows <= 2){
       previewClass = 'preview-2row';
@@ -320,20 +369,11 @@
       previewClass = 'preview-4row';
     }else if (presetRows <= 5){
       previewClass = 'preview-5row';
-    }
+      }
   }
 
-  async function getScreenshot() {
-    for (let key in cameras){
-      let camera = cameras[key];
-      if(camera.atemChannel == programChannel) {
-        document.querySelector('#program').src = "http://"+ camera.ip +"/dms.jpg";
-        document.querySelector('#program').className = '';
-      }
-    }
-    setTimeout(getScreenshot, 100);
-  }
-</script>
+    
+  </script>
 
 <svelte:head>
   <title>Hillegonda stream app</title>
@@ -378,6 +418,31 @@
             {/each}
           </div>
         </div>
+       <div class="navbar-item">
+        <div class="buttons">
+          <!-- svelte-ignore a11y-missing-attribute -->
+           {#if streaming}
+              <a class="button is-danger" on:click={stopStream}>
+                <span class="icon">
+                  <Icon path={mdiAccessPointOff} />
+                </span>
+                <span>
+                  Stop stream
+                </span>
+              </a>
+            {:else}
+              <a class="button is-primary" on:click={startStream}>
+                <span class="icon">
+                  <Icon path={mdiAccessPoint} />
+                </span>
+                <span>
+                  Start stream
+                </span>
+              </a>
+            {/if}
+          <!-- svelte-ignore a11y-missing-attribute -->
+        </div>
+      </div>
     </div>
   </div>
 </nav>
