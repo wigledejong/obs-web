@@ -330,12 +330,11 @@
       switchers[0].runMacro(2);
         isMuted = false;
     }
-    await getStreamerStatus();
   }
 
   async function getScreenshot() {    
       //document.querySelector('#program').src = "http://172.16.110.21/tmp/sbox-snapshot/sbox-quarter.jpg?v="+new Date().getTime();
-      document.querySelector('#program').src= 'http://'+ appConfig.atemServer +'/screenshot';
+      document.querySelector('#program').src= 'http://'+ appConfig.atemServer +'/screenshot.jpg?v='+new Date().getTime();
       document.querySelector('#program').className = '';
       setTimeout(getScreenshot, 500);
   }

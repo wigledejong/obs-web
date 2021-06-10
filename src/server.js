@@ -5,7 +5,46 @@ const fs          = require('fs');
 const SelfReloadJSON = require('self-reload-json');
 const cors = require('cors');
 const http = require('http');
-let HttpUtils = require('./httpUtils.js');
+const HttpUtils = require('./httpUtils.js');
+
+const winston = require('winston');
+
+const DailyRotateFile = require('winston-daily-rotate-file');
+
+var transport = new DailyRotateFile({
+  filename: 'server-%DATE%.log',
+  datePattern: 'YYYY-MM-DD-HH',
+  zippedArchive: true,
+  maxSize: '20m',
+  maxFiles: '14d'
+});
+
+
+const logger = winston.createLogger({
+  level: 'info',
+  format: winston.format.combine(
+    winston.format.timestamp({ format: 'YYYY/MM/DD HH:mm:ss' }),
+    winston.format.printf(info => `[${info.timestamp}] ${info.level}: ${info.message}`)
+  ),
+  transports: [
+    transport
+  ],
+});
+
+//
+// If we're not in production then log to the `console` with the format:
+// `${info.level}: ${info.message} JSON.stringify({ ...rest }) `
+//
+if (process.env.NODE_ENV !== 'production') {
+  logger.add(new winston.transports.Console({
+    format: winston.format.combine(
+      winston.format.timestamp({ format: 'YYYY/MM/DD HH:mm:ss' }),
+      winston.format.printf(info => `[${info.timestamp}] ${info.level}: ${info.message}`)
+    ),
+  }));
+}
+
+
 let httpUtils = new HttpUtils();
 
 const app = express();
@@ -62,7 +101,7 @@ let CLIENTS = expressWs.getWss().clients;
 
 let device = 0;
 for (var switcher of atemConfig.switchers) {
-  console.log('Initializing switcher', switcher.addr, switcher.port)
+  logger.info('Initializing switcher', switcher.addr, switcher.port)
   atem = new ATEM;
   atem.event.setMaxListeners(5);
   atem.connect(switcher.addr, switcher.port);
@@ -70,15 +109,15 @@ for (var switcher of atemConfig.switchers) {
   switchers.push(atem);
 
   atem.on('stateChanged', (err, state) => {
-    // console.log('atem stateChanged')
+    // logger.info('atem stateChanged')
     broadcast(JSON.stringify(state));
   })
   atem.on('connect', (err) => {
-    console.log('atem connected');
+    logger.info('atem connected');
     broadcast(JSON.stringify({ method: 'connect', device: atem.device }));
   })
   atem.on('disconnect', (err) => {
-    console.log('atem disconnected');
+    logger.info('atem disconnected');
     broadcast(JSON.stringify({ method: 'disconnect', device: atem.device }));
   })
   device += 1;
@@ -97,7 +136,7 @@ app.use(express.urlencoded({ extended: true }))  // for parsing application/x-ww
 app.use(express.text())// for parsing application/plain-text
 
 app.get('/config', function(request, response){
-  console.log("Config wordt opgehaald");
+  logger.info("Config wordt opgehaald");
   response.send(config);
 });
 
@@ -107,15 +146,15 @@ app.post('/cameraMode', function (request, response){
 });
 
 app.get('/loginStreamer', function (request, response) {
-  console.log("Login to streamer");
+  logger.info("Login to streamer");
   // login
-  console.info('==> 1. login');
+  logger.info('==> 1. login');
   httpUtils.get(loginUrl)
     .then((loginRes) => {
       // get Cookie info
       resCookies = loginRes['headers']['set-cookie'];
-      console.info('==> 2. get login cookie:');
-      console.info(resCookies);
+      logger.info('==> 2. get login cookie:');
+      logger.info(resCookies);
 
       // set response Cookie
       reqOpts = {
@@ -126,8 +165,8 @@ app.get('/loginStreamer', function (request, response) {
       response.send("oke");
     })
     .catch((err) => {
-      console.info('==> response data:');
-      console.log(err);
+      logger.info('==> response data:');
+      logger.error(err);
       response.send("error");
     });
 
@@ -137,24 +176,24 @@ app.get('/streamStatus', function (request, response) {
   httpUtils.get(statusUrl, reqOpts)
     .then((res) => {
       const data = res.data;
-      console.info("Status stream:" + ((data["cur-status"] & DeviceStatus.statusLiving) == DeviceStatus.statusLiving));
+      logger.info("Status stream:" + ((data["cur-status"] & DeviceStatus.statusLiving) == DeviceStatus.statusLiving));
       response.send(((data["cur-status"] & DeviceStatus.statusLiving) == DeviceStatus.statusLiving));
     })
     .catch((err) => {
-      console.log(err);
+      logger.error(err);
       response.send("error");
   });
 });
 
 app.get('/streamData', function (request, response) {
-  console.log("Stream data wordt opgehaald");
+  logger.info("Stream data wordt opgehaald");
   httpUtils.get(statusUrl, reqOpts)
     .then((res) => {
       const data = res.data;
       response.send(data["live-status"]);
     })
     .catch((err) => {
-      console.log(err);
+      logger.error(err);
       response.send("error");
   });
 });
@@ -164,26 +203,26 @@ app.get('/streamen', async function (request, response) {
   await httpUtils.get(statusUrl, reqOpts)
     .then((res) => {
       status = res.data;
-      //console.info("Status stream in http :" + ((status["cur-status"] & DeviceStatus.statusLiving) == DeviceStatus.statusLiving));
+      //logger.info("Status stream in http :" + ((status["cur-status"] & DeviceStatus.statusLiving) == DeviceStatus.statusLiving));
     })
     .catch((err) => {
-      console.log(err);
+      logger.error(err);
       response.send("error");
     });
  
-  console.info("Status stream:" + ((status["cur-status"] & DeviceStatus.statusLiving) == DeviceStatus.statusLiving));
+  logger.info("Status stream:" + ((status["cur-status"] & DeviceStatus.statusLiving) == DeviceStatus.statusLiving));
   if ((status["cur-status"] & DeviceStatus.statusLiving) == DeviceStatus.statusLiving) {
-    console.log("Streamen stoppen");
+    logger.info("Streamen stoppen");
     httpUtils.get(stopStream, reqOpts);
     response.send("gestopt");
   } else {
-    console.log("Streamen starten");
+    logger.info("Streamen starten");
     httpUtils.get(startStream, reqOpts);
     response.send("gestart");
   }
 });
 
-app.get('/screenshot', function (request, response) {
+app.get('/screenshot.jpg', function (request, response) {
   let time = new Date().getTime();
   let data = '';
 
@@ -213,24 +252,24 @@ app.get('/screenshot', function (request, response) {
 });
 
 app.post('/saveStreamStatus', function (request, response) {
-  console.log("streamStatus wordt opgeslagen: " + request.body);
+  logger.info("streamStatus wordt opgeslagen: " + request.body);
   streamStatuss = request.body;
   response.send("oke");
 });
 
 app.get('/getPreset', function(request, response){
-  console.log("Preset opgevraagd: " + preset);
+  logger.info("Preset opgevraagd: " + preset);
   response.send(preset);
 });
 
 app.post('/savePreset', function(request, response){
-  console.log("Preset wordt opgeslagen: " + request.body);
+  logger.info("Preset wordt opgeslagen: " + request.body);
   preset = request.body;
   response.send("oke");
 });
 
 app.get('/getUitzending', function (request, response) {
-  console.log("Uitzending opgevraagd: " + uitzending);
+  logger.info("Uitzending opgevraagd: " + uitzending);
   if (uitzending == '') {
     uitzending = 'Kerkdienst';
   }
@@ -238,14 +277,14 @@ app.get('/getUitzending', function (request, response) {
 });
 
 app.post('/saveUitzending', function (request, response) {
-  console.log("Uitzending wordt opgeslagen: " + request.body);
+  logger.info("Uitzending wordt opgeslagen: " + request.body);
   uitzending = request.body;
   response.send("oke");
 });
 
 app.ws('/atemWebSocket', function(ws, req) {
   const ip = req.connection.remoteAddress;
-  console.log(ip, 'connected');
+  logger.info(ip +' connected');
   // initialize client with all switchers
   for (var atem of switchers) {
     ws.send(JSON.stringify(atem.state));
@@ -253,7 +292,7 @@ app.ws('/atemWebSocket', function(ws, req) {
 
   ws.on('message', function incoming(message) {
     /* JSON-RPC v2 compatible call */
-    console.log(message.slice(0, 500));
+    logger.info(message.slice(0, 500));
     const data = JSON.parse(message);
     const method = data.method;
     const params = data.params;
