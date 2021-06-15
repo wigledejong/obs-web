@@ -189,7 +189,7 @@
        await setCameraPreset(preset);
        await changeAtemChannel(atemChannel);
        console.log(nextPreset);
-       if(nextPreset == "Predikant"){
+       if(nextPreset == "Predikant" || nextPreset == "Avondmaal"){
           await runMacro(18);
        } else{
           await runMacro(16);

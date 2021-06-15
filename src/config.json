@@ -46,6 +46,10 @@
       "camera": "camera1",
       "preset": "5"
     },
+    "Avondmaal": {
+      "camera": "camera1",
+      "preset": "6"
+    },
     "Overzicht opzij": {
       "camera": "camera2",
       "preset": "1"
@@ -88,7 +92,7 @@
   "uitzendingVariant": [ "Uitvaart", "Kerkdienst", "Jongerendienst" ],
   "presetUitzending": {
     "Uitvaart": [ "Predikant", "Overzicht midden", "Binnenkomst", "Orgel", "Overzicht boven", "Overzicht opzij", "Overzicht uitgezoomd", "Piano" ],
-    "Kerkdienst": [ "Begin dienst", "Predikant", "Organist", "Orgel", "Piano", "Overzicht midden", "Overzicht opzij", "Overzicht uitgezoomd", "Einde dienst", "Collecte" ],
+    "Kerkdienst": [ "Begin dienst", "Predikant", "Organist", "Orgel", "Piano", "Avondmaal", "Overzicht opzij", "Overzicht midden", "Einde dienst", "Collecte" ],
     "Jongerendienst" : [ "Begin dienst"]
   },
   "avondProfiel" : {
