@@ -63,18 +63,18 @@ const DeviceStatus = {
   statusMIC: 0x100,     // Reserved
   statusPHONE: 0x200,     // Reserved
   statusOutput: 0x400,     // Reserved
-  statusDiskTest: 0x1000,    // USB performance test is in progress 
+  statusDiskTest: 0x1000,    // USB performance test is in progress
   statusBlue: 0x2000,    // Reserved
   statusUpgrade: 0x4000,    // Firmware update is in progress
   statusNetTest: 0x8000,    // Streaming test is in progress
   statusPasswd: 0x10000,   // Device password has been set
-  statusOccupied: 0x20000,   // Device has been locked by app(s), at most 2 simultaneously 
+  statusOccupied: 0x20000,   // Device has been locked by app(s), at most 2 simultaneously
   statusFormatDisk: 0x100000,  // USB format is in progress
   statusSearchWifi: 0x400000,  // The device is searching for available Wi-Fi networks
   statusConnectWifi: 0x800000,  // The device is connecting to a Wi-Fi network
   statusConnectBlue: 0x1000000, // Reserved
   statusCheckUpgrade: 0x2000000, // The device is detecting if there is a new firmware version
-  statusReset: 0x4000000,   // resetting 
+  statusReset: 0x4000000,   // resetting
   stausIPv6: 0x8000000,   // Reserved
   statusTestLock: 0x10000000,  // Reserved
   statusReboot: 0x20000000,  // rebooting
@@ -142,7 +142,7 @@ app.get('/config', function(request, response){
 
 app.post('/cameraMode', function (request, response){
   ip = request.body;
-  
+
 });
 
 app.get('/loginStreamer', function (request, response) {
@@ -209,7 +209,7 @@ app.get('/streamen', async function (request, response) {
       logger.error(err);
       response.send("error");
     });
- 
+
   logger.info("Status stream:" + ((status["cur-status"] & DeviceStatus.statusLiving) == DeviceStatus.statusLiving));
   if ((status["cur-status"] & DeviceStatus.statusLiving) == DeviceStatus.statusLiving) {
     logger.info("Streamen stoppen");
@@ -226,7 +226,7 @@ app.get('/screenshot.jpg', function (request, response) {
   let time = new Date().getTime();
   let data = '';
 
-  
+
   http.request("http://172.16.110.21/tmp/sbox-snapshot/sbox-quarter.jpg?v=" + time)
     .on('response', function (res) {
 
@@ -243,7 +243,7 @@ app.get('/screenshot.jpg', function (request, response) {
           response.contentType('image/jpeg');
           response.send(Buffer.from(body, 'binary'))
         })
-   
+
     })
     .on('error', function (err) {
       response.send(err)

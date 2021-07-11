@@ -46,7 +46,7 @@
     }
 
 
-      
+
     // Dropdown menu
     const $dropdown = document.querySelector('.has-dropdown');
     if ( $dropdown != null){
@@ -105,26 +105,27 @@
       let data = JSON.parse(event.data);
       let device = data.device || 0;
       console.log(data);
-      if (data.method){
-          switch (data.method) {
-            case 'connect':
-              switchers[device].connected = true;
-              programChannel = switchers[0].returnProgramChannel();
-              //console.log("Program Channel: " + switchers[0].returnProgramChannel());
-              break;
-            case 'disconnect':
-              switchers[device].connected = false;
-              break;
-            default:
-              switchers[device].connected = true;
-              switchers[device].state = data;
-              programChannel = switchers[0].returnProgramChannel();
-              //console.log("Program Channel: " + switchers[0].returnProgramChannel());
+      switch (data.method) {
+        case 'connect':
+          switchers[device].connected = true;
+          programChannel = switchers[0].returnProgramChannel();
+          //console.log("Program Channel: " + switchers[0].returnProgramChannel());
+          break;
+        case 'disconnect':
+          switchers[device].connected = false;
+          break;
+        default:
+          if(data._pin){
+            switchers[device].connected = true;
+            switchers[device].state = data;
+            programChannel = switchers[0].returnProgramChannel();
           }
-      }else{
-         console.log("Websocket ATEM not available");
-         intervalID = setTimeout(connectAtem, (10*60000));
+          else {
+            console.log("Websocket ATEM error");
+            intervalID = setTimeout(connectAtem, (10*6000));
+          }
       }
+
       return data;
 
     });
@@ -170,7 +171,7 @@
 
   async function stopStream(){
     await fetch('http://'+ appConfig.atemServer +'/streamen');
-  }    
+  }
 
   async function streamStatus() {
    if(isConnected){
@@ -184,7 +185,7 @@
    }
   }
 
-  
+
   async function checkSession(){
     let date = new Date();
     if(getSession("sessie")){
@@ -211,7 +212,7 @@
     date.setTime(date.getTime() + (2*60*60*1000));
     localStorage.setItem(name, date.toISOString());
   }
-  
+
   function getSession(name) {
     return localStorage.getItem(name);
   }
@@ -263,7 +264,7 @@
     console.log("Transitie");
     switchers[0].cutTransition();
   }
-    
+
   async function changeUitzending(e){
     isLoaded = false;
     let newUitzending = e.currentTarget.textContent.trim();
@@ -300,7 +301,7 @@
   }
 
   async function runMacro(macro) {
-    switchers[0].runMacro(macro);   
+    switchers[0].runMacro(macro);
   }
 
   async function setCameraProfile(profiel, avond){
@@ -381,11 +382,12 @@
     }
   }
 
-  async function getScreenshot() {    
-      //document.querySelector('#program').src = "http://172.16.110.21/tmp/sbox-snapshot/sbox-quarter.jpg?v="+new Date().getTime();
-      document.querySelector('#program').src= 'http://'+ appConfig.atemServer +'/screenshot.jpg?v='+new Date().getTime();
-      document.querySelector('#program').className = '';
-      setTimeout(getScreenshot, 500);
+  async function getScreenshot() {
+     if(isConnected){
+       document.querySelector('#program').src= 'http://'+ appConfig.atemServer +'/screenshot.jpg?v='+new Date().getTime();
+       document.querySelector('#program').className = '';
+       setTimeout(getScreenshot, 500);
+     }
   }
 
   async function getStreamerStatus(){
@@ -420,7 +422,7 @@
       }
   }
 
-    
+
   </script>
 
 <svelte:head>
@@ -515,7 +517,7 @@
           {/each}
         </div>
       {/each}
-      <div class="columns is-centered is-vcentered has-text-centered mt-1"> 
+      <div class="columns is-centered is-vcentered has-text-centered mt-1">
         <div class="column">
           <img id="program" alt="Program" class="is-hidden"/>
         </div>
