@@ -18,6 +18,7 @@
     await streamStatus();
     await getSavedUitzending();
     await getSavedPreset();
+    await checkSession();
     connectAtem();
     await getScreenshot();
     if ('serviceWorker' in navigator) {
@@ -61,6 +62,7 @@
     isOchtend,
     isAvond,
     isMuted,
+    isConnected,
     cameraOn,
     datum,
     previewClass,
@@ -102,21 +104,26 @@
     atemWebSocket.addEventListener("message", function(event) {
       let data = JSON.parse(event.data);
       let device = data.device || 0;
-      //console.log(data);
-      switch (data.method) {
-        case 'connect':
-          switchers[device].connected = true;
-          programChannel = switchers[0].returnProgramChannel();
-          //console.log("Program Channel: " + switchers[0].returnProgramChannel());
-          break;
-        case 'disconnect':
-          switchers[device].connected = false;
-          break;
-        default:
-          switchers[device].connected = true;
-          switchers[device].state = data;
-          programChannel = switchers[0].returnProgramChannel();
-          //console.log("Program Channel: " + switchers[0].returnProgramChannel());
+      console.log(data);
+      if (data.method){
+          switch (data.method) {
+            case 'connect':
+              switchers[device].connected = true;
+              programChannel = switchers[0].returnProgramChannel();
+              //console.log("Program Channel: " + switchers[0].returnProgramChannel());
+              break;
+            case 'disconnect':
+              switchers[device].connected = false;
+              break;
+            default:
+              switchers[device].connected = true;
+              switchers[device].state = data;
+              programChannel = switchers[0].returnProgramChannel();
+              //console.log("Program Channel: " + switchers[0].returnProgramChannel());
+          }
+      }else{
+         console.log("Websocket ATEM not available");
+         intervalID = setTimeout(connectAtem, (10*60000));
       }
       return data;
 
@@ -148,7 +155,13 @@
   }
 
   async function loginStreamer(){
-    await fetch('http://'+ appConfig.atemServer +'/loginStreamer');
+    let data  = await fetch('http://'+ appConfig.atemServer +'/loginStreamer');
+    if (data == "error"){
+        isConnected = false;
+    }
+    if (data == "oke"){
+        isConnected = true;
+    }
   }
 
   async function startStream(){
@@ -160,11 +173,47 @@
   }    
 
   async function streamStatus() {
+   if(isConnected){
     await fetch('http://'+ appConfig.atemServer +'/streamStatus')
       .then(res => res.json())
       .then(data => streaming = data);
     console.log("Status streaming: " +streaming);
     setTimeout(streamStatus, 1000);
+   } else {
+      streaming = false;
+   }
+  }
+
+  
+  async function checkSession(){
+    let date = new Date();
+    if(getSession("sessie")){
+      let sessieDate = new Date(getSession("sessie"));
+      if (date.getTime() < sessieDate.getTime()) {
+          // console.log(getSession("sessie"));
+          setTimeout(checkSession, 1000);
+       } else {
+          console.log("Sessie verlopen");
+          setSession("sessie");
+         // console.log(getSession("sessie"));
+          window.location.reload();
+       }
+    }else{
+      console.log("Cookie niet gezet");
+      setSession("sessie");
+     // console.log(getSession("sessie"));
+      window.location.reload();
+    }
+  }
+
+  function setSession(name) {
+    let date = new Date();
+    date.setTime(date.getTime() + (2*60*60*1000));
+    localStorage.setItem(name, date.toISOString());
+  }
+  
+  function getSession(name) {
+    return localStorage.getItem(name);
   }
 
   async function setPreset(e){

@@ -26,7 +26,11 @@
     }
   },
   "presets": {
-    "Predikant": {
+    "Spreker": {
+      "camera": "camera1",
+      "preset": "1"
+    },
+   "Afkondingen": {
       "camera": "camera1",
       "preset": "1"
     },
@@ -42,13 +46,17 @@
       "camera": "camera1",
       "preset": "4"
     },
-    "Predikant preekstoel": {
+    "Preekstoel": {
       "camera": "camera1",
-      "preset": "5"
+      "preset": "6"
+    },
+    "Predikant": {
+      "camera": "camera1",
+      "preset": "6"
     },
     "Avondmaal": {
       "camera": "camera1",
-      "preset": "6"
+      "preset": "5"
     },
     "Overzicht opzij": {
       "camera": "camera2",
@@ -82,6 +90,14 @@
       "camera": "camera3",
       "preset": "1"
     },
+    "Dopen 1": {
+      "camera": "camera1",
+      "preset": "7"
+    },
+    "Dopen 2": {
+      "camera": "camera2",
+      "preset": "7"
+    },
     "Collecte": {
       "camera": "Media Player 1"
     },
@@ -91,8 +107,8 @@
   },
   "uitzendingVariant": [ "Uitvaart", "Kerkdienst", "Jongerendienst" ],
   "presetUitzending": {
-    "Uitvaart": [ "Predikant", "Overzicht midden", "Binnenkomst", "Orgel", "Overzicht boven", "Overzicht opzij", "Overzicht uitgezoomd", "Piano" ],
-    "Kerkdienst": [ "Begin dienst", "Predikant", "Organist", "Orgel", "Piano", "Avondmaal", "Overzicht opzij", "Overzicht midden", "Einde dienst", "Collecte" ],
+    "Uitvaart": [ "Spreker", "Preekstoel", "Overzicht midden", "Binnenkomst", "Orgel", "Overzicht boven", "Overzicht opzij", "Overzicht uitgezoomd", "Piano" ],
+    "Kerkdienst": [ "Begin dienst", "Afkondingen", "Predikant", "Organist", "Orgel", "Piano", "Overzicht opzij", "Overzicht midden", "Einde dienst", "Collecte" ],
     "Jongerendienst" : [ "Begin dienst"]
   },
   "avondProfiel" : {
