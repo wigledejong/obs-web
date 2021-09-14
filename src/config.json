@@ -30,7 +30,7 @@
       "camera": "camera1",
       "preset": "1"
     },
-   "Afkondingen": {
+   "Afkondigingen": {
       "camera": "camera1",
       "preset": "1"
     },
@@ -98,6 +98,67 @@
       "camera": "camera2",
       "preset": "7"
     },
+    "Gebed": {
+      "camera": "camera2",
+      "preset": "2"
+    },
+    "Afkondigingen 2": {
+      "camera": "camera3",
+      "preset": "5"
+    },
+    "Predikant 2": {
+      "camera": "camera3",
+      "preset": "5"
+    },
+    "Spreker 3": {
+      "camera": "camera3",
+      "preset": "6"
+    },
+    "Spreker 2": {
+      "camera": "camera2",
+      "preset": "5"
+    },
+    "Gebed 2": {
+      "camera": "camera2",
+      "preset": "2"
+    },
+    "Kist": {
+	"camera": "camera1",
+        "preset": "8"
+    },
+  "Pianist": {
+	"camera": "camera2",
+        "preset": "10"
+    },
+"Knielen": {
+	"camera": "camera1",
+        "preset": "11"
+    },
+   "Pianist 2": {
+	"camera": "camera1",
+        "preset": "12"
+    },
+"Knielen 2": {
+	"camera": "camera2",
+        "preset": "14"
+    },
+"Gewelf midden": {
+	"camera": "camera2",
+        "preset": "21"
+    },
+"Podium": {
+	"camera": "camera2",
+        "preset": "22"
+    },
+"Podium 2": {
+	"camera": "camera1",
+        "preset": "23"
+    },
+ 
+    "Overzicht": {
+      "camera": "camera2",
+      "preset": "9"
+    },
     "Collecte": {
       "camera": "Media Player 1"
     },
@@ -105,11 +166,13 @@
       "camera": "Media Player 2"
     }
   },
-  "uitzendingVariant": [ "Uitvaart", "Kerkdienst", "Jongerendienst" ],
+  "uitzendingVariant": ["Uitvaart", "Kerkdienst", "Huwelijk", "Ingebruikname" ],
   "presetUitzending": {
-    "Uitvaart": [ "Spreker", "Preekstoel", "Overzicht midden", "Binnenkomst", "Orgel", "Overzicht boven", "Overzicht opzij", "Overzicht uitgezoomd", "Piano" ],
-    "Kerkdienst": [ "Begin dienst", "Afkondingen", "Predikant", "Organist", "Orgel", "Piano", "Overzicht opzij", "Overzicht midden", "Einde dienst", "Collecte" ],
-    "Jongerendienst" : [ "Begin dienst"]
+    "Uitvaart": [ "Spreker", "Preekstoel", "Overzicht midden", "Binnenkomst", "Orgel","Organist", "Kist", "Overzicht boven", "Overzicht opzij", "Overzicht uitgezoomd", "Piano" ],
+    "Kerkdienst": [ "Begin dienst", "Afkondigingen", "Predikant", "Organist", "Orgel", "Gebed", "Piano", "Overzicht opzij", "Overzicht midden", "Einde dienst", "Collecte" ],
+    "Ingebruikname": [ "Pianist", "Pianist 2", "Organist", "Orgel", "Podium", "Podium 2", "Overzicht boven", "Overzicht opzij", "Overzicht midden", "Gewelf midden" ],    
+    "Uitvaart 2": [ "Spreker 2", "Binnenkomst", "Orgel", "Organist", "Overzicht boven", "Overzicht", "Piano" ],
+    "Huwelijk" : [ "Orgel", "Preekstoel", "Afkondigingen", "Knielen", "Knielen 2", "Binnenkomst", "Overzicht boven", "Overzicht opzij"]
   },
   "avondProfiel" : {
     "gammanameindex" : "3",

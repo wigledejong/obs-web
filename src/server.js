@@ -176,6 +176,7 @@ app.get('/streamStatus', function (request, response) {
   httpUtils.get(statusUrl, reqOpts)
     .then((res) => {
       const data = res.data;
+      logger.info(JSON.stringify(data["live-status"]));
       logger.info("Status stream:" + ((data["cur-status"] & DeviceStatus.statusLiving) == DeviceStatus.statusLiving));
       response.send(((data["cur-status"] & DeviceStatus.statusLiving) == DeviceStatus.statusLiving));
     })

@@ -157,10 +157,12 @@
 
   async function loginStreamer(){
     let data  = await fetch('http://'+ appConfig.atemServer +'/loginStreamer');
+    console.log(data);
     if (data == "error"){
         isConnected = false;
+        setTimeout(loginStreamer, 1000);
     }
-    if (data == "oke"){
+    if (data.statusText == "OK"){
         isConnected = true;
     }
   }
@@ -174,6 +176,7 @@
   }
 
   async function streamStatus() {
+    
    if(isConnected){
     await fetch('http://'+ appConfig.atemServer +'/streamStatus')
       .then(res => res.json())
@@ -383,11 +386,11 @@
   }
 
   async function getScreenshot() {
-     if(isConnected){
-       document.querySelector('#program').src= 'http://'+ appConfig.atemServer +'/screenshot.jpg?v='+new Date().getTime();
-       document.querySelector('#program').className = '';
+       if(isConnected){
+        document.querySelector('#program').src= 'http://'+ appConfig.atemServer +'/screenshot.jpg?v='+new Date().getTime();
+        document.querySelector('#program').className = '';
+       }
        setTimeout(getScreenshot, 500);
-     }
   }
 
   async function getStreamerStatus(){
