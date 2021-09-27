@@ -182,15 +182,25 @@
     "Begin dienst": {
       "camera": "MediaPlayer2"
     },
-    "LoopCam":{
+    "LoopCam": {
       "camera": "camera4"
+    },
+    "Camera Tegenover Podium": {
+      "camera": "camera1"
+    },
+    "Camera Opzij": {
+      "camera": "camera2"
+    },
+    "Camera van Boven": {
+      "camera": "camera3"
     }
   },
   "uitzendingVariant": [
     "Uitvaart",
     "Kerkdienst",
     "Huwelijk",
-    "Ingebruikname"
+    "Ingebruikname",
+    "MusesOfMindefullnessII"
   ],
   "presetUitzending": {
     "Uitvaart": [
@@ -249,6 +259,12 @@
       "Binnenkomst",
       "Overzicht boven",
       "Overzicht opzij"
+    ],
+    "MusesOfMindefullnessII": [
+      "LoopCam",
+      "Camera Tegenover Podium",
+      "Camera Opzij",
+      "Camera van Boven"
     ]
   },
   "avondProfiel": {

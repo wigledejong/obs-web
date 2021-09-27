@@ -231,7 +231,7 @@
        await setCameraPreset(presetsConfig["Orgel"]);
        await runMacro(4);
     }else{
-       if (camera.ptz){
+       if (preset.preset){
          await setCameraPreset(preset);
        }
        await changeAtemChannel(camera.atemChannel);
