@@ -176,7 +176,7 @@
   }
 
   async function streamStatus() {
-    
+
    if(isConnected){
     await fetch('http://'+ appConfig.atemServer +'/streamStatus')
       .then(res => res.json())
@@ -224,23 +224,17 @@
     isLoaded = false;
     let nextPreset = e.currentTarget.textContent;
     let preset = presetsConfig[nextPreset];
-    let atemChannel = '';
     let camera = cameras[preset.camera];
 
     if(nextPreset == "Collecte" || nextPreset == "Begin dienst"){
-        if(preset.camera == "Media Player 1" ){
-           atemChannel = '3010';
-        }
-        else if(preset.camera == "Media Player 2"){
-          atemChannel = '3020';
-        }
-       await changeAtemChannel(atemChannel);
+       await changeAtemChannel(camera.atemChannel);
        await setCameraPreset(presetsConfig["Orgel"]);
        await runMacro(4);
     }else{
-       atemChannel = camera.atemChannel;
-       await setCameraPreset(preset);
-       await changeAtemChannel(atemChannel);
+       if (camera.ptz){
+         await setCameraPreset(preset);
+       }
+       await changeAtemChannel(camera.atemChannel);
        console.log(nextPreset);
        if(nextPreset == "Predikant" || nextPreset == "Afkondigingen" || nextPreset == "Spreker"){
           await runMacro(18);
@@ -310,11 +304,13 @@
   async function setCameraProfile(profiel, avond){
     for (let key in cameras){
       let camera = cameras[key];
-      let profileUrl = "http://"+ camera.ip +"/cgi-bin/lums_piceffect.cgi";
-      for (let key of Object.keys(profiel)) {
-        let value = profiel[key];
-        if(appConfig.connectToLumens){
-          await sendCommandToLumens(profileUrl, JSON.stringify({"cmd": key, "value": value}), camera);
+      if(camera.ptz) {
+        let profileUrl = "http://" + camera.ip + "/cgi-bin/lums_piceffect.cgi";
+        for (let key of Object.keys(profiel)) {
+          let value = profiel[key];
+          if (appConfig.connectToLumens) {
+            await sendCommandToLumens(profileUrl, JSON.stringify({"cmd": key, "value": value}), camera);
+          }
         }
       }
     }
@@ -334,14 +330,16 @@
     isLoaded = false;
     for (let key in cameras){
       let camera = cameras[key];
-      let configUrl =  "http://"+ camera.ip +"/cgi-bin/lums_configuration.cgi";
-      if (cameraOn){
-        if(appConfig.connectToLumens){
-          await sendCommandToLumens(configUrl, JSON.stringify({"cmd": "campowerModeAction", "powermode": "0"}), camera);
-        }
-      } else{
-        if(appConfig.connectToLumens){
-          await sendCommandToLumens(configUrl, JSON.stringify({"cmd": "campowerModeAction", "powermode": "1"}), camera);
+      if (camera.ptz){
+        let configUrl =  "http://"+ camera.ip +"/cgi-bin/lums_configuration.cgi";
+        if (cameraOn){
+          if(appConfig.connectToLumens){
+            await sendCommandToLumens(configUrl, JSON.stringify({"cmd": "campowerModeAction", "powermode": "0"}), camera);
+          }
+        } else{
+          if(appConfig.connectToLumens){
+            await sendCommandToLumens(configUrl, JSON.stringify({"cmd": "campowerModeAction", "powermode": "1"}), camera);
+          }
         }
       }
     }
