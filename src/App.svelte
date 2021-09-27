@@ -168,11 +168,11 @@
   }
 
   async function startStream(){
-    await fetch('http://'+ appConfig.atemServer +'/streamen');
+    await fetch('http://'+ appConfig.atemServer +'/startStreamen');
   }
 
   async function stopStream(){
-    await fetch('http://'+ appConfig.atemServer +'/streamen');
+    await fetch('http://'+ appConfig.atemServer +'/stopStreamen');
   }
 
   async function streamStatus() {
@@ -242,7 +242,7 @@
        await setCameraPreset(preset);
        await changeAtemChannel(atemChannel);
        console.log(nextPreset);
-       if(nextPreset == "Predikant" || nextPreset == "Avondmaal"){
+       if(nextPreset == "Predikant" || nextPreset == "Afkondigingen" || nextPreset == "Spreker"){
           await runMacro(18);
        } else{
           await runMacro(16);

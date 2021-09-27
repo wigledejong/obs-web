@@ -12,7 +12,7 @@
     },
     "camera2": {
       "ip": "172.16.110.247",
-      "naam": "Noorbeuk Links",
+      "naam": "Noordbeuk Links",
       "user": "admin",
       "password": "9999",
       "atemChannel": "6"
@@ -166,7 +166,7 @@
       "camera": "Media Player 2"
     }
   },
-  "uitzendingVariant": ["Uitvaart", "Kerkdienst", "Huwelijk", "Ingebruikname" ],
+  "uitzendingVariant": ["Uitvaart", "Kerkdienst", "Huwelijk", "Ingebruikname"],
   "presetUitzending": {
     "Uitvaart": [ "Spreker", "Preekstoel", "Overzicht midden", "Binnenkomst", "Orgel","Organist", "Kist", "Overzicht boven", "Overzicht opzij", "Overzicht uitgezoomd", "Piano" ],
     "Kerkdienst": [ "Begin dienst", "Afkondigingen", "Predikant", "Organist", "Orgel", "Gebed", "Piano", "Overzicht opzij", "Overzicht midden", "Einde dienst", "Collecte" ],

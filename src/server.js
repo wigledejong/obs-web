@@ -199,6 +199,38 @@ app.get('/streamData', function (request, response) {
   });
 });
 
+app.get('/stopStreamen', async function (request, response) {
+  let status = '';
+  await httpUtils.get(statusUrl, reqOpts)
+    .then((res) => {
+      status = res.data;
+      //logger.info("Status stream in http :" + ((status["cur-status"] & DeviceStatus.statusLiving) == DeviceStatus.statusLiving));
+    })
+    .catch((err) => {
+      logger.error(err);
+      response.send("error");
+    });
+  logger.info("Streamen stoppen");
+  httpUtils.get(stopStream, reqOpts);
+  response.send("gestopt");
+});
+
+app.get('/startStreamen', async function (request, response) {
+  let status = '';
+  await httpUtils.get(statusUrl, reqOpts)
+    .then((res) => {
+      status = res.data;
+      //logger.info("Status stream in http :" + ((status["cur-status"] & DeviceStatus.statusLiving) == DeviceStatus.statusLiving));
+    })
+    .catch((err) => {
+      logger.error(err);
+      response.send("error");
+    });
+  logger.info("Streamen starten");
+  httpUtils.get(startStream, reqOpts);
+  response.send("gestart");
+});
+
 app.get('/streamen', async function (request, response) {
   let status = '';
   await httpUtils.get(statusUrl, reqOpts)
