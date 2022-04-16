@@ -105,6 +105,10 @@
       "camera": "camera2",
       "preset": "4"
     },
+    "Piano 2": {
+      "camera": "camera3",
+      "preset": "76"
+    },
     "Orgel": {
       "camera": "camera3",
       "preset": "1"
@@ -226,6 +230,9 @@
     "Begin dienst": {
       "camera": "MediaPlayer2"
     },
+    "Begin dienst 2": {
+      "camera": "MediaPlayer2"
+    },
     "LoopCam": {
       "camera": "camera4"
     },
@@ -244,6 +251,10 @@
     "Samen": {
       "camera": "camera1",
       "preset": "55"
+    },
+    "Koor": {
+      "camera": "camera1",
+      "preset": "76"
     },
     "Spreker L": {
       "camera": "camera1",
@@ -294,6 +305,7 @@
     "Huwelijk",
     "Avondmaal",
     "Avondmaal 2",
+    "Pasen",
     "Dopen",
     "Interview",
     "Jongerendienst"
@@ -324,6 +336,21 @@
       "Orgel",
       "Gebed",
       "Piano",
+      "Overzicht opzij",
+      "Overzicht boven",
+      "Collecte",
+      "Einde dienst"
+    ],
+    "Pasen": [
+      "Begin dienst 2",
+      "Tafel",
+      "Lessenaar",
+      "Predikant",
+      "Organist",
+      "Orgel",
+      "Gebed",
+      "Piano 2",
+      "Koor",
       "Overzicht opzij",
       "Overzicht boven",
       "Collecte",
