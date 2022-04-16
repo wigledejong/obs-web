@@ -5,7 +5,7 @@ const path = require('path');
 function HttpUtils() { }
 
 // get
-HttpUtils.prototype.get = function (url, options = {}) {
+HttpUtils.prototype.get = async function (url, options = {}) {
   return new Promise((resolve, reject) => {
     const urlInfo = new URL(url)
     let opts = {}
@@ -51,6 +51,55 @@ HttpUtils.prototype.get = function (url, options = {}) {
     })
   })
 }
+
+// post
+HttpUtils.prototype.post = async function (url, body = {}) {
+  return new Promise((resolve, reject) => {
+    const urlInfo = new URL(url)
+
+    const data = JSON.stringify(body);
+
+    let opts = {
+      hostname: urlInfo.hostname,
+      path: urlInfo.pathname + urlInfo.search,
+      port: urlInfo.port || 80,
+      method: 'POST',
+      headers: {
+        "accept": "application/json, text/javascript, */*; q=0.01",
+        "accept-language": "nl-NL,nl;q=0.9,en-US;q=0.8,en;q=0.7",
+        "cache-control": "no-cache",
+        "content-type": "text/plain;charset=UTF-8",
+        "pragma": "no-cache",
+        "x-requested-with": "XMLHttpRequest"
+      },
+    }
+    const req = http.request(opts, (res) => {
+      console.log(`STATUS: ${res.statusCode}`);
+      console.log(`HEADERS: ${JSON.stringify(res.headers)}`);
+      let resData = '';
+      res.on('data', (chunk) => {
+        resData += chunk;
+      });
+      res.on('end', () => {
+        try {
+          resolve(JSON.parse(resData));
+        } catch (err) {
+          reject(resData);
+        }
+
+      });
+    });
+
+    req.on('error', (e) => {
+      reject(e.message);
+    });
+
+    req.write(data);
+    req.end();
+  })
+}
+
+
 
 // upload
 HttpUtils.prototype.upload = function (url, filePath, options = {}) {

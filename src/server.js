@@ -1,11 +1,12 @@
 const express     = require('express');
 const ATEM        = require('applest-atem');
-const atemConfig  = require('./atemConfig.json');
-const fs          = require('fs');
+const atemConfig = require('./atemConfig.json');
+const camConfig = require('./config.json');
 const SelfReloadJSON = require('self-reload-json');
 const cors = require('cors');
 const http = require('http');
 const HttpUtils = require('./httpUtils.js');
+const fetch = require('node-fetch');
 
 const winston = require('winston');
 
@@ -50,7 +51,9 @@ let httpUtils = new HttpUtils();
 const app = express();
 var expressWs = require('express-ws')(app);
 
-var config = new SelfReloadJSON('src/config.json');
+var appConfig = new SelfReloadJSON('src/config.json');
+logger.info(JSON.stringify(camConfig.cameras));
+var cameras = camConfig.cameras;
 
 const DeviceStatus = {
   statusFirst: 0x01,      // first boot
@@ -92,10 +95,12 @@ const statusUrl = `http://${deviceIP}/usapi?method=get-status`;
 const startStream = `http://${deviceIP}/usapi?method=start-live`;
 const stopStream = `http://${deviceIP}/usapi?method=stop-live`;
 const loginUrl = `http://${deviceIP}/usapi?method=login&id=${userName}&pass=${password}`;
+const screenShotUrl = `http://${deviceIP}/tmp/sbox-snapshot/sbox-quarter.jpg?v=`;
 
 let preset = '';
 let uitzending = '';
 let streamStatus = '';
+let statusCameras = [];
 
 let CLIENTS = expressWs.getWss().clients;
 
@@ -129,6 +134,116 @@ function broadcast(message) {
   }
 }
 
+async function checkStatusCameras() {
+  statusCameras = [];
+  for (var cam of Object.keys(cameras)) {
+    let camera = cameras[cam];
+    await checkCameraStatus(camera);
+  }
+}
+
+async function checkCameraStatus(camera) { 
+  //logger.info("Check camera status: " + camera.naam);
+  if (camera.ptz) {
+    await httpUtils.get('http://' + camera.ip + '/powerModeInq')
+      .then((result) => {
+        let cameraStatus = JSON.parse(result['data']);
+        logger.info("Camera: " + camera.naam + "Status: " + JSON.stringify(cameraStatus.POWERMODE));
+        camera.status = cameraStatus.POWERMODE;
+        statusCameras.push(camera);
+      })
+      .catch((err) => {
+        logger.info('==> response data:');
+        logger.error(err);
+      });
+  }
+}
+
+async function turnOffCameras() {
+  let body = '{ "cmd": "campowerModeAction", "powermode": "0" }';
+  for (var cam of Object.keys(cameras)) {
+    let camera = cameras[cam];
+    await checkCameraStatus(camera);
+    // await loginCamera(camera);
+    if (camera.status == "ON") {
+      logger.info("Turn off camera: " + camera.naam);
+      if (camera.ptz) {
+        const options = {
+          mode: 'no-cors',
+          credentials: 'include',
+          method: 'POST',
+          referrerPolicy: "unsafe-url",
+          headers: {
+            "accept": "application/json, text/javascript, */*; q=0.01",
+            "accept-language": "nl-NL,nl;q=0.9,en-US;q=0.8,en;q=0.7",
+            "cache-control": "no-cache",
+            "content-type": "application/json; charset=UTF-8",
+            "pragma": "no-cache",
+            "x-requested-with": "XMLHttpRequest",
+            "Cookie": "Cookie: userName=" + camera.user + "; passWord=" + camera.password + ";"
+          },
+          body: body
+        }
+
+        await fetch('http://' + camera.ip + '/cgi-bin/lums_configuration.cgi', options)
+          .then((result) => {
+            response = JSON.stringify(result);
+            logger.info(response);
+          })
+          .catch((err) => {
+            logger.info('==> response data:');
+            logger.error(err);
+          });
+      }
+    }
+    
+  }
+}
+
+async function turnOnCameras() {
+  let body = '{ "cmd": "campowerModeAction", "powermode": "1" }';
+  for (var cam of Object.keys(cameras)) {
+    let camera = cameras[cam];
+    await checkCameraStatus(camera);
+    // await loginCamera(camera);
+    if (camera.status == "OFF") {
+      logger.info("Turn on camera: " + camera.naam);
+      if (camera.ptz) {
+        const options = {
+          mode: 'no-cors',
+          credentials: 'include',
+          method: 'POST',
+          referrerPolicy: "unsafe-url",
+          headers: {
+            "accept": "application/json, text/javascript, */*; q=0.01",
+            "accept-language": "nl-NL,nl;q=0.9,en-US;q=0.8,en;q=0.7",
+            "cache-control": "no-cache",
+            "content-type": "application/json; charset=UTF-8",
+            "pragma": "no-cache",
+            "x-requested-with": "XMLHttpRequest",
+            "Cookie": "Cookie: userName=" + camera.user + "; passWord=" + camera.password + ";"
+          },
+          body: body
+        }
+
+        await fetch('http://' + camera.ip + '/cgi-bin/lums_configuration.cgi', options)
+          .then((result) => {
+            response = JSON.stringify(result);
+            logger.info(response);
+          })
+          .catch((err) => {
+            logger.info('==> response data:');
+            logger.error(err);
+          });
+      }
+    }
+
+  }
+}
+
+function loadConfig() {
+  appConfig = new SelfReloadJSON('src/config.json');
+}
 
 app.use(cors());
 app.use(express.json()) // for parsing application/json
@@ -137,19 +252,26 @@ app.use(express.text())// for parsing application/plain-text
 
 app.get('/config', function(request, response){
   logger.info("Config wordt opgehaald");
-  response.send(config);
+  loadConfig();
+  response.send(appConfig);
 });
 
-app.post('/cameraMode', function (request, response){
-  ip = request.body;
-
+app.get('/camerasOff', async function (request, response) {
+  await turnOffCameras();
+  response.send(statusCameras);
 });
 
-app.get('/loginStreamer', function (request, response) {
+app.get('/camerasOn', async function (request, response) {
+  await turnOnCameras();
+  response.send(statusCameras);
+});
+
+app.get('/loginStreamer', async function (request, response) {
+  await checkStatusCameras();
   logger.info("Login to streamer");
   // login
   logger.info('==> 1. login');
-  httpUtils.get(loginUrl)
+  await httpUtils.get(loginUrl)
     .then((loginRes) => {
       // get Cookie info
       resCookies = loginRes['headers']['set-cookie'];
@@ -164,15 +286,23 @@ app.get('/loginStreamer', function (request, response) {
       }
       response.send("oke");
     })
-    .catch((err) => {
+    .catch(async (err) => {
       logger.info('==> response data:');
       logger.error(err);
-      response.send("error");
+      await turnOffCameras();
+      response.status(400).end("error");
     });
 
 })
 
-app.get('/streamStatus', function (request, response) {
+app.get('/getCameraStatus', async function (request, response) {
+  logger.info("Status cameras wordt opgevraagd.");
+  await checkStatusCameras();
+  response.send(statusCameras);
+});
+
+
+app.get('/streamStatus', async function (request, response) {
   httpUtils.get(statusUrl, reqOpts)
     .then((res) => {
       const data = res.data;
@@ -180,9 +310,10 @@ app.get('/streamStatus', function (request, response) {
       logger.info("Status stream:" + ((data["cur-status"] & DeviceStatus.statusLiving) == DeviceStatus.statusLiving));
       response.send(((data["cur-status"] & DeviceStatus.statusLiving) == DeviceStatus.statusLiving));
     })
-    .catch((err) => {
+    .catch(async (err) => {
       logger.error(err);
-      response.send("error");
+      await turnOffCameras();
+      response.status(400).end("error");
   });
 });
 
@@ -260,7 +391,7 @@ app.get('/screenshot.jpg', function (request, response) {
   let data = '';
 
 
-  http.request("http://172.16.110.21/tmp/sbox-snapshot/sbox-quarter.jpg?v=" + time)
+  http.request(screenShotUrl + time)
     .on('response', function (res) {
 
       var body = ''

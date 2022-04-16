@@ -4,41 +4,43 @@
   // Imports
   import { onMount } from 'svelte';
   import './style.scss';
-  import { mdiCameraBurst, mdiCctv, mdiCameraOff, mdiCamera, mdiWeatherNight, mdiWhiteBalanceSunny, mdiCommentTextOutline, mdiSpeakerOff, mdiSpeaker, mdiBorderVertical,
-  mdiAccessPoint, mdiAccessPointOff, mdiRecord, mdiStop, mdiCheckboxMarked, mdiAlert, mdiCloseOctagon} from '@mdi/js';
+  import { mdiCameraBurst, mdiCctv, mdiCameraOff, mdiCamera, mdiWeatherNight, mdiWhiteBalanceSunny, mdiCommentTextOutline, mdiMicrophoneOff, mdiMicrophone, mdiBorderVertical,
+  mdiAccessPoint, mdiAccessPointOff, mdiRecord, mdiStop, mdiCheckboxMarked, mdiAlert, mdiCloseOctagon, mdiHeadphonesOff, mdiHeadphones, mdiPictureInPictureTopRight} from '@mdi/js';
   import Icon from 'mdi-svelte';
   import compareVersions from 'compare-versions';
 
   import { ATEM } from "./atem.js";
 
   onMount(async () => {
-    isLoaded = true;
-    await loadConfig();
-    await loginStreamer();
-    await streamStatus();
-    await getSavedUitzending();
-    await getSavedPreset();
-    await checkSession();
-    connectAtem();
-    await getScreenshot();
-    if ('serviceWorker' in navigator) {
-      await navigator.serviceWorker.register('/service-worker.js');
-    }
+  isLoaded = true;
+  await loadConfig();
+  await statusCameras();
+  await loginStreamer();
+  await streamStatus();
+  await getSavedUitzending();
+  await getSavedPreset();
+  await checkSession();
 
-    // Hamburger menu
-    const $navbarBurgers = Array.prototype.slice.call(document.querySelectorAll('.navbar-burger'), 0);
-    if ($navbarBurgers.length > 0) {
-      $navbarBurgers.forEach(el => {
-        el.addEventListener('click', () => {
-          const target = document.getElementById(el.dataset.target);
-          el.classList.toggle('is-active');
-          target.classList.toggle('is-active');
-        });
-      });
-    }
+  await connectAtem();
+  await getScreenshot();
+  if ('serviceWorker' in navigator) {
+  await navigator.serviceWorker.register('/service-worker.js');
+  }
 
-    datum = new Date();
-    if(datum.getHours() < 16){
+  // Hamburger menu
+  const $navbarBurgers = Array.prototype.slice.call(document.querySelectorAll('.navbar-burger'), 0);
+  if ($navbarBurgers.length > 0) {
+  $navbarBurgers.forEach(el => {
+  el.addEventListener('click', () => {
+  const target = document.getElementById(el.dataset.target);
+  el.classList.toggle('is-active');
+  target.classList.toggle('is-active');
+  });
+  });
+  }
+
+  datum = new Date();
+  if(datum.getHours() < 16){
         await setCameraProfile(ochtendProfiel, false);
     }
     else {
@@ -62,12 +64,14 @@
     isOchtend,
     isAvond,
     isMuted,
+    isPipUit,
     isConnected,
     cameraOn,
     datum,
     previewClass,
     streaming,
     isLoaded = false;
+  let isMutedPC = true;
   let switchers = [];
   let avondProfiel = [];
   let ochtendProfiel = [];
@@ -90,7 +94,7 @@
      .map((_, index) => index * 4)
      .map(begin => presets.slice(begin, begin + 4));
 
-  function connectAtem() {
+  async function connectAtem() {
     console.log("Opening ATEM websocket...");
     atemWebSocket = new WebSocket("ws://"+ appConfig.atemServer + "/atemWebSocket");
     atemWebSocket.addEventListener("open", function(event) {
@@ -101,15 +105,17 @@
       // update svelte
       atemWebSocket = atemWebSocket;
     });
-    atemWebSocket.addEventListener("message", function(event) {
+  
+    atemWebSocket.addEventListener("message", async function(event) {
       let data = JSON.parse(event.data);
       let device = data.device || 0;
-      console.log(data);
+      // console.log(data);
       switch (data.method) {
         case 'connect':
           switchers[device].connected = true;
           programChannel = switchers[0].returnProgramChannel();
-          //console.log("Program Channel: " + switchers[0].returnProgramChannel());
+          // console.log("Program Channel: " + switchers[0].returnProgramChannel());
+          
           break;
         case 'disconnect':
           switchers[device].connected = false;
@@ -124,6 +130,7 @@
             console.log("Websocket ATEM error");
             intervalID = setTimeout(connectAtem, (10*6000));
           }
+          await checkAtemState(); 
       }
 
       return data;
@@ -148,22 +155,47 @@
       .then(data => appConfig = data)
     console.log(appConfig);
     cameras = appConfig.cameras;
-    presetsConfig = appConfig.presets;
+    console.log(presetsConfig);
+    presetsConfig = [];
+    presetUitzending = [];
+    presetsConfig =  appConfig.presets;
     avondProfiel = appConfig.avondProfiel;
     ochtendProfiel = appConfig.ochtendProfiel;
     uitzendingVariant = appConfig.uitzendingVariant;
     presetUitzending = appConfig.presetUitzending;
   }
 
-  async function loginStreamer(){
-    let data  = await fetch('http://'+ appConfig.atemServer +'/loginStreamer');
-    console.log(data);
-    if (data == "error"){
-        isConnected = false;
-        setTimeout(loginStreamer, 1000);
+  async function statusCameras(){
+    let cameraOnBool = false;
+    let cameraStatus = '';
+    await fetch('http://'+ appConfig.atemServer +'/getCameraStatus')
+      .then(res => res.json())
+      .then(data => cameraStatus = data)
+    //console.log(cameraStatus);
+    for (let key in cameraStatus){
+      let camera = cameraStatus[key];
+      if (camera.status == "ON") {
+          cameraOnBool = true;
+      }
     }
-    if (data.statusText == "OK"){
+    cameraOn = cameraOnBool;
+  }
+
+  async function loginStreamer(){
+    console.log("Login Streamer");
+    await fetch('http://'+ appConfig.atemServer +'/loginStreamer')
+    .then((res) => {
+      if (res.statusText == "OK"){
         isConnected = true;
+      }
+    })
+    .catch((err) => {
+      isConnected = false;
+      
+    });
+    if(!isConnected){
+      console.log("Niet geconnect");
+      setTimeout(loginStreamer, 1000);
     }
   }
 
@@ -176,11 +208,15 @@
   }
 
   async function streamStatus() {
-
+   await statusCameras();
    if(isConnected){
     await fetch('http://'+ appConfig.atemServer +'/streamStatus')
       .then(res => res.json())
-      .then(data => streaming = data);
+      .then(data => streaming = data)
+      .catch(err => {
+        isConnected = false;
+        loginStreamer();
+      });
     console.log("Status streaming: " +streaming);
     setTimeout(streamStatus, 1000);
    } else {
@@ -328,21 +364,18 @@
 
   async function powerModeCameras(){
     isLoaded = false;
-    for (let key in cameras){
-      let camera = cameras[key];
-      if (camera.ptz){
-        let configUrl =  "http://"+ camera.ip +"/cgi-bin/lums_configuration.cgi";
-        if (cameraOn){
-          if(appConfig.connectToLumens){
-            await sendCommandToLumens(configUrl, JSON.stringify({"cmd": "campowerModeAction", "powermode": "0"}), camera);
-          }
-        } else{
-          if(appConfig.connectToLumens){
-            await sendCommandToLumens(configUrl, JSON.stringify({"cmd": "campowerModeAction", "powermode": "1"}), camera);
-          }
-        }
-      }
-    }
+    let cameraStatus = '';
+    if (cameraOn) {
+      await fetch('http://'+ appConfig.atemServer +'/camerasOff')
+        .then(res => res.json())
+        .then(data => cameraStatus = data)
+      console.log(cameraStatus);
+    } else {
+      await fetch('http://'+ appConfig.atemServer +'/camerasOn')
+        .then(res => res.json())
+        .then(data => cameraStatus = data)
+      console.log(cameraStatus);
+    }    
     isLoaded = true;
   }
 
@@ -370,10 +403,10 @@
   }
 
   async function toggleMute() {
-    console.log(switchers[0].getVisibleChannels());
-    console.log(switchers[0].getAudio());
+    //console.log(switchers[0].getVisibleChannels());
+    //console.log(switchers[0].getAudio());
     let audio = switchers[0].getAudio();
-    console.log(audio[8]);
+    //console.log(audio[8]);
     if(audio[8].on){
         switchers[0].runMacro(0);
         isMuted = true;
@@ -383,10 +416,76 @@
     }
   }
 
+  async function toggleMutePC() {
+    // console.log(switchers[0].getVisibleChannels());
+    // console.log(switchers[0].getAudio());
+    let audio = switchers[0].getAudio();
+    // console.log(audio[0]);
+    if(audio[0].on){
+        switchers[0].runMacro(3);
+        isMutedPC = true;
+    } else {
+      switchers[0].runMacro(1);
+        isMutedPC = false;
+    }
+  }
+
+  async function togglePip() {
+      // console.log(switchers[0].getVideo);
+      let video = switchers[0].getVideo();
+      // console.log(video.ME);
+      // console.log(video.ME[0]);
+      if(video.ME[0].upstreamKeyState[0]){
+          switchers[0].runMacro(16);
+          isPipUit = true;
+      } else {
+        switchers[0].runMacro(4);
+          isPipUit = false;
+      }
+    }
+
+        
+ async function checkAtemState(){
+    // console.log(switchers[0].getVisibleChannels());
+    // console.log(switchers[0].getAudio());
+    let audio = switchers[0].getAudio();
+    let video = switchers[0].getVideo();
+    // console.log(audio[0]);
+    // console.log(audio[8]);
+    if(audio[0].on){
+        isMutedPC = false;
+    } else {
+        isMutedPC = true;
+    }
+    if(audio[8].on){
+        isMuted = false;
+    } else {
+        isMuted = true;
+    }
+    if(video.ME[0].upstreamKeyState[0]){
+        isPipUit = false;
+    } else {
+        isPipUit = true;
+    }
+ }
+       
+
   async function getScreenshot() {
-       if(isConnected){
-        document.querySelector('#program').src= 'http://'+ appConfig.atemServer +'/screenshot.jpg?v='+new Date().getTime();
-        document.querySelector('#program').className = '';
+       if(!isConnected){
+          document.querySelector('#program').alt= 'De systemen staan uit om de cameras te bedienen. Schakel deze in.';
+          document.querySelector('#program').src= ' ';
+          document.querySelector('#program').className = '';
+       }else if(!cameraOn){
+          document.querySelector('#program').alt= 'De cameras staan uit. Schakel deze in.';
+          document.querySelector('#program').src= ' ';
+          document.querySelector('#program').className = '';
+       }else if(isConnected){
+          document.querySelector('#program').src= 'http://'+ appConfig.atemServer +'/screenshot.jpg?v='+new Date().getTime();
+          document.querySelector('#program').className = '';
+       }else{
+          document.querySelector('#program').alt= 'De systemen staan uit om de cameras te bedienen. Schakel deze in.';
+          document.querySelector('#program').src= ' ';
+          document.querySelector('#program').className = '';
        }
        setTimeout(getScreenshot, 500);
   }
@@ -400,6 +499,7 @@
   }
 
   async function calculatePreviewClass() {
+    presetChunks = 0;
     presetChunks = Array(Math.ceil(presets.length / 4))
      .fill()
      .map((_, index) => index * 4)
@@ -526,15 +626,35 @@
   </div>
 </section>
 <nav class="navbar is-info is-fixed-bottom" role="navigation" aria-label="main navigation">
+  <div class="navbar-item">
+    <!-- svelte-ignore a11y-missing-attribute -->
+    <a class:is-danger={isMutedPC} class:is-primary={!isMutedPC} class="button" on:click={toggleMutePC} title="Toggle Mute PC">
+      <span class="icon">
+        {#if isMutedPC}
+        <Icon path={mdiHeadphonesOff} />
+        {:else}
+        <Icon path={mdiHeadphones} />
+        {/if}
+      </span>
+    </a>
+  </div>  <div class="navbar-item">
+    <!-- svelte-ignore a11y-missing-attribute -->
+    <a class:is-danger={isPipUit} class:is-primary={!isPipUit} class="button" on:click={togglePip} title="Toggle Mute PC">
+      <span class="icon">
+        <Icon path={mdiPictureInPictureTopRight} />
+      </span>
+    </a>
+  </div>
+  
   <div class="navbar-start is-justify-content-center is-flex-grow-1">
     <div class="navbar-item">
       <!-- svelte-ignore a11y-missing-attribute -->
-      <a class:is-danger={isMuted} class:is-primary={!isMuted} class="button" on:click={toggleMute} title="Toggle Mute">
+      <a class:is-danger={isMuted} class:is-primary={!isMuted} class="button" on:click={toggleMute} title="Toggle Mute Audio Systeem">
           <span class="icon">
             {#if isMuted}
-              <Icon path={mdiSpeakerOff} />
+              <Icon path={mdiMicrophoneOff} />
             {:else}
-              <Icon path={mdiSpeaker} />
+              <Icon path={mdiMicrophone} />
             {/if}
           </span>
       </a>

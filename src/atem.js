@@ -340,6 +340,10 @@ class ATEM {
     return visibleAudioChannels;
   }
 
+  getVideo() {
+    return this.state.video;
+  }
+
   returnProgramChannel() {
     return this.state.video.ME[0].programInput;
   }
