@@ -1,6 +1,6 @@
 # Hillegondakerkstream
 
-#### WebApp to control [OBS](https://obsproject.com/) remotely for the Hillegondakerk
+#### WebApp to control camera system in the Hillegondakerk
 
 ![github pages](https://github.com/wigledejong/obs-web/workflows/github%20pages/badge.svg)
 
@@ -11,7 +11,7 @@ Based on https://github.com/Niek/obs-web/
 
 #### Screenshot:
 
-![Screenshot of OBS-web](screenshot_app.png)
+![Screenshot of Hillegonda stream app](screenshot_app.png)
 
 #### Features:
 
