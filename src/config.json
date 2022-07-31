@@ -44,8 +44,13 @@
     },
     "PC1": {
       "naam": "PC1",
-      "atemChannel":"1",
-      "ptz":  false
+      "atemChannel": "1",
+      "ptz": false
+    },
+    "OrgelCamera": {
+      "naam": "OrgelCamera",
+      "atemChannel": "3",
+      "ptz": false
     }
   },
   "presets": {
@@ -90,8 +95,7 @@
       "preset": "75"
     },
     "Beker & Brood": {
-      "camera": "camera3",
-      "preset": "75"
+      "camera": "MediaPlayer1"
     },
     "Overzicht opzij": {
       "camera": "camera2",
@@ -165,6 +169,10 @@
       "camera": "camera2",
       "preset": "41"
     },
+    "Pianist 3": {
+      "camera": "camera2",
+      "preset": "4"
+    },
     "Predikant 2": {
       "camera": "camera3",
       "preset": "5"
@@ -205,9 +213,13 @@
       "camera": "camera2",
       "preset": "22"
     },
-    "Lessenaar": {
+    "Lessenaar Oud": {
       "camera": "camera1",
       "preset": "30"
+    },
+    "Lessenaar": {
+      "camera": "camera1",
+      "preset": "44"
     },
     "Podium 2": {
       "camera": "camera1",
@@ -247,6 +259,9 @@
     },
     "Filmpje": {
       "camera": "PC1"
+    },
+    "Orgel camera": {
+      "camera": "OrgelCamera"
     },
     "Samen": {
       "camera": "camera1",
@@ -297,6 +312,26 @@
     },
     "Begin stream": {
       "camera": "MediaPlayer2"
+    },
+    "Tekenen 1": {
+      "camera": "camera1",
+      "preset": "10"
+    },
+    "Tekenen 2": {
+      "camera": "camera2",
+      "preset": "10"
+    },
+    "Tekenen 3": {
+      "camera": "camera3",
+      "preset": "10"
+    },
+    "Lessenaar 4": {
+      "camera": "camera1",
+      "preset": "40"
+    },
+    "Lessenaar 5": {
+      "camera": "camera2",
+      "preset": "11"
     }
   },
   "uitzendingVariant": [
@@ -308,7 +343,10 @@
     "Pasen",
     "Dopen",
     "Interview",
-    "Jongerendienst"
+    "Jongerendienst",
+    "Ambtsdragers",
+    "Diploma Uitreiking",
+    "Orgel concert"
   ],
   "presetUitzending": {
     "Uitvaart": [
@@ -429,9 +467,7 @@
       "Gebed",
       "Piano",
       "Overzicht opzij",
-      "Overzicht boven",
-      "Einde dienst",
-      "Collecte"
+      "Overzicht boven"
     ],
     "Dopen": [
       "Begin dienst",
@@ -497,6 +533,28 @@
       "Knielen 2",
       "Collecte",
       "Einde dienst"
+    ],
+    "Diploma Uitreiking": [
+      "Begin stream",
+      "Tekenen 1",
+      "Tekenen 2",
+      "Tekenen 3",
+      "Lessenaar 4",
+      "Lessenaar 5",
+      "Overzicht midden",
+      "Overzicht boven",
+      "Overzicht opzij",
+      "Overzicht uitgezoomd",
+      "Orgel",
+      "Organist"
+    ],
+    "Orgel concert": [
+      "Orgel camera",
+      "Orgel",
+      "Organist",
+      "Overzicht opzij",
+      "Overzicht midden",
+      "Overizcht boven"
     ]
   },
   "avondProfiel": {

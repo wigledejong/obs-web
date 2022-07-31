@@ -86,7 +86,7 @@ const DeviceStatus = {
 let atem;
 const switchers = [];
 
-const deviceIP = '172.16.110.21';
+const deviceIP = '172.16.110.20';
 const userName = 'Admin';
 const password = 'e3afed0047b08059d0fada10f400c1e5';
 let reqOpts = {};
