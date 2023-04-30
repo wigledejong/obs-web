@@ -86,20 +86,21 @@ const DeviceStatus = {
 let atem;
 const switchers = [];
 
-const deviceIP = '172.16.110.20';
+const streamerIP = '172.16.110.20';
 const userName = 'Admin';
 const password = 'e3afed0047b08059d0fada10f400c1e5';
 let reqOpts = {};
 
-const statusUrl = `http://${deviceIP}/usapi?method=get-status`;
-const startStream = `http://${deviceIP}/usapi?method=start-live`;
-const stopStream = `http://${deviceIP}/usapi?method=stop-live`;
-const loginUrl = `http://${deviceIP}/usapi?method=login&id=${userName}&pass=${password}`;
-const screenShotUrl = `http://${deviceIP}/tmp/sbox-snapshot/sbox-quarter.jpg?v=`;
+const statusUrl = `http://${streamerIP}/usapi?method=get-status`;
+const startStream = `http://${streamerIP}/usapi?method=start-live`;
+const stopStream = `http://${streamerIP}/usapi?method=stop-live`;
+const loginUrl = `http://${streamerIP}/usapi?method=login&id=${userName}&pass=${password}`;
+const screenShotUrl = `http://${streamerIP}/tmp/sbox-snapshot/sbox-quarter.jpg?v=`;
 
 let preset = '';
 let uitzending = '';
 let streamStatus = '';
+let liveStatus = '';
 let statusCameras = [];
 
 let CLIENTS = expressWs.getWss().clients;
@@ -153,7 +154,7 @@ async function checkCameraStatus(camera) {
         statusCameras.push(camera);
       })
       .catch((err) => {
-        logger.info('==> response data:');
+        logger.info('==> Camera response data:');
         logger.error(err);
       });
   }
@@ -188,10 +189,10 @@ async function turnOffCameras() {
         await fetch('http://' + camera.ip + '/cgi-bin/lums_configuration.cgi', options)
           .then((result) => {
             response = JSON.stringify(result);
-            logger.info(response);
+            logger.info('Camera:'+response);
           })
           .catch((err) => {
-            logger.info('==> response data:');
+            logger.info('==> Camera response data:');
             logger.error(err);
           });
       }
@@ -229,10 +230,10 @@ async function turnOnCameras() {
         await fetch('http://' + camera.ip + '/cgi-bin/lums_configuration.cgi', options)
           .then((result) => {
             response = JSON.stringify(result);
-            logger.info(response);
+            logger.info('Camera:'+response);
           })
           .catch((err) => {
-            logger.info('==> response data:');
+            logger.info('==> Camera response data:');
             logger.error(err);
           });
       }
@@ -270,12 +271,12 @@ app.get('/loginStreamer', async function (request, response) {
   await checkStatusCameras();
   logger.info("Login to streamer");
   // login
-  logger.info('==> 1. login');
+  logger.info('==> 1. streamer login');
   await httpUtils.get(loginUrl)
     .then((loginRes) => {
       // get Cookie info
       resCookies = loginRes['headers']['set-cookie'];
-      logger.info('==> 2. get login cookie:');
+      logger.info('==> 2. streamer get login cookie:');
       logger.info(resCookies);
 
       // set response Cookie
@@ -287,7 +288,7 @@ app.get('/loginStreamer', async function (request, response) {
       response.send("oke");
     })
     .catch(async (err) => {
-      logger.info('==> response data:');
+      logger.info('==> streamer response data:');
       logger.error(err);
       await turnOffCameras();
       response.status(400).end("error");
@@ -306,11 +307,14 @@ app.get('/streamStatus', async function (request, response) {
   httpUtils.get(statusUrl, reqOpts)
     .then((res) => {
       const data = res.data;
-      logger.info(JSON.stringify(data["live-status"]));
-      logger.info("Status stream:" + ((data["cur-status"] & DeviceStatus.statusLiving) == DeviceStatus.statusLiving));
-      response.send(((data["cur-status"] & DeviceStatus.statusLiving) == DeviceStatus.statusLiving));
+      liveStatus = JSON.stringify(data["live-status"]);
+      logger.info('Streamer:'+liveStatus);
+      streamStatus = ((data["cur-status"] & DeviceStatus.statusLiving) == DeviceStatus.statusLiving)
+      logger.info("Status stream:" + streamStatus);
+      response.send(streamStatus);
     })
     .catch(async (err) => {
+      logger.info('==> streamer response data:');
       logger.error(err);
       await turnOffCameras();
       response.status(400).end("error");
@@ -322,9 +326,12 @@ app.get('/streamData', function (request, response) {
   httpUtils.get(statusUrl, reqOpts)
     .then((res) => {
       const data = res.data;
-      response.send(data["live-status"]);
+      liveStatus = JSON.stringify(data["live-status"]);
+      logger.info('Streamer:'+liveStatus);
+      response.send(liveStatus);
     })
     .catch((err) => {
+      logger.info('==> streamer response data:');
       logger.error(err);
       response.send("error");
   });
@@ -338,6 +345,7 @@ app.get('/stopStreamen', async function (request, response) {
       //logger.info("Status stream in http :" + ((status["cur-status"] & DeviceStatus.statusLiving) == DeviceStatus.statusLiving));
     })
     .catch((err) => {
+      logger.info('==> streamer response data:');
       logger.error(err);
       response.send("error");
     });
@@ -354,6 +362,7 @@ app.get('/startStreamen', async function (request, response) {
       //logger.info("Status stream in http :" + ((status["cur-status"] & DeviceStatus.statusLiving) == DeviceStatus.statusLiving));
     })
     .catch((err) => {
+      logger.info('==> streamer response data:');
       logger.error(err);
       response.send("error");
     });
@@ -370,6 +379,7 @@ app.get('/streamen', async function (request, response) {
       //logger.info("Status stream in http :" + ((status["cur-status"] & DeviceStatus.statusLiving) == DeviceStatus.statusLiving));
     })
     .catch((err) => {
+      logger.info('==> streamer response data:');
       logger.error(err);
       response.send("error");
     });
@@ -448,7 +458,7 @@ app.post('/saveUitzending', function (request, response) {
 
 app.ws('/atemWebSocket', function(ws, req) {
   const ip = req.connection.remoteAddress;
-  logger.info(ip +' connected');
+  logger.info('client:'+ip +' connected');
   // initialize client with all switchers
   for (var atem of switchers) {
     ws.send(JSON.stringify(atem.state));

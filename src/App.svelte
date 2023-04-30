@@ -1,5 +1,4 @@
 <script>
-  const OBS_WEBSOCKET_LATEST_VERSION = '4.8.0'; // https://api.github.com/repos/Palakis/obs-websocket/releases/latest
 
   // Imports
   import { onMount } from 'svelte';
@@ -12,43 +11,29 @@
   import { ATEM } from "./atem.js";
 
   onMount(async () => {
-  isLoaded = true;
-  await loadConfig();
-  await statusCameras();
-  await loginStreamer();
-  await streamStatus();
-  await getSavedUitzending();
-  await getSavedPreset();
-  await checkSession();
-
-  await connectAtem();
-  await getScreenshot();
-  if ('serviceWorker' in navigator) {
-  await navigator.serviceWorker.register('/service-worker.js');
-  }
-
-  // Hamburger menu
-  const $navbarBurgers = Array.prototype.slice.call(document.querySelectorAll('.navbar-burger'), 0);
-  if ($navbarBurgers.length > 0) {
-  $navbarBurgers.forEach(el => {
-  el.addEventListener('click', () => {
-  const target = document.getElementById(el.dataset.target);
-  el.classList.toggle('is-active');
-  target.classList.toggle('is-active');
-  });
-  });
-  }
-
-  datum = new Date();
-  if(datum.getHours() < 16){
-        await setCameraProfile(ochtendProfiel, false);
+    await loadConfig();
+    await statusCameras();
+    await loginStreamer();
+    await streamStatus();
+    await getSavedUitzending();
+    await getSavedPreset();
+    await checkSession();
+    await connectAtem();
+    await getScreenshot();
+    if ('serviceWorker' in navigator) {
+      await navigator.serviceWorker.register('/service-worker.js');
     }
-    else {
-      await setCameraProfile(avondProfiel, true);
+    // Hamburger menu
+    const $navbarBurgers = Array.prototype.slice.call(document.querySelectorAll('.navbar-burger'), 0);
+    if ($navbarBurgers.length > 0) {
+      $navbarBurgers.forEach(el => {
+        el.addEventListener('click', () => {
+          const target = document.getElementById(el.dataset.target);
+          el.classList.toggle('is-active');
+          target.classList.toggle('is-active');
+        });
+      });
     }
-
-
-
     // Dropdown menu
     const $dropdown = document.querySelector('.has-dropdown');
     if ( $dropdown != null){
@@ -56,7 +41,7 @@
         $dropdown.classList.toggle('is-active');
       });
     }
-
+    isLoaded = true;
   });
 
   // State
@@ -109,12 +94,10 @@
     atemWebSocket.addEventListener("message", async function(event) {
       let data = JSON.parse(event.data);
       let device = data.device || 0;
-      // console.log(data);
       switch (data.method) {
         case 'connect':
           switchers[device].connected = true;
           programChannel = switchers[0].returnProgramChannel();
-          // console.log("Program Channel: " + switchers[0].returnProgramChannel());
           
           break;
         case 'disconnect':
@@ -153,9 +136,7 @@
     await fetch(url+':8081/config')
       .then(res => res.json())
       .then(data => appConfig = data)
-    console.log(appConfig);
     cameras = appConfig.cameras;
-    console.log(presetsConfig);
     presetsConfig = [];
     presetUitzending = [];
     presetsConfig =  appConfig.presets;
@@ -171,7 +152,6 @@
     await fetch('http://'+ appConfig.atemServer +'/getCameraStatus')
       .then(res => res.json())
       .then(data => cameraStatus = data)
-    //console.log(cameraStatus);
     for (let key in cameraStatus){
       let camera = cameraStatus[key];
       if (camera.status == "ON") {
@@ -217,7 +197,6 @@
         isConnected = false;
         loginStreamer();
       });
-    console.log("Status streaming: " +streaming);
     setTimeout(streamStatus, 1000);
    } else {
       streaming = false;
@@ -230,18 +209,18 @@
     if(getSession("sessie")){
       let sessieDate = new Date(getSession("sessie"));
       if (date.getTime() < sessieDate.getTime()) {
-          // console.log(getSession("sessie"));
+          console.log(getSession("sessie"));
           setTimeout(checkSession, 1000);
        } else {
           console.log("Sessie verlopen");
           setSession("sessie");
-         // console.log(getSession("sessie"));
+          console.log(getSession("sessie"));
           window.location.reload();
        }
     }else{
       console.log("Cookie niet gezet");
       setSession("sessie");
-     // console.log(getSession("sessie"));
+      console.log(getSession("sessie"));
       window.location.reload();
     }
   }
@@ -271,7 +250,6 @@
          await setCameraPreset(preset);
        }
        await changeAtemChannel(camera.atemChannel);
-       console.log(nextPreset);
        if(nextPreset == "Predikant" || nextPreset == "Afkondigingen" || nextPreset == "Spreker"){
           await runMacro(18);
        } else{
@@ -292,9 +270,7 @@
   }
 
   async function changeAtemChannel(atemChannel){
-    console.log("Atem Channel als preview: " + atemChannel);
     switchers[0].changePreviewInput(atemChannel);
-    console.log("Transitie");
     switchers[0].cutTransition();
   }
 
@@ -356,13 +332,12 @@
   }
 
   async function setCameraPreset(preset){
-    console.log(preset);
     let camera = cameras[preset.camera];
     let presetUrl =  "http://"+ camera.ip +"/cgi-bin/lums_configuration.cgi";
     await sendCommandToLumens(presetUrl, JSON.stringify({"cmd":"campresetrecall", "memnum": preset.preset}), camera);
   }
 
-  async function powerModeCameras(){
+  async function changePowerModeCameras(){
     isLoaded = false;
     let cameraStatus = '';
     if (cameraOn) {
@@ -403,10 +378,7 @@
   }
 
   async function toggleMute() {
-    //console.log(switchers[0].getVisibleChannels());
-    //console.log(switchers[0].getAudio());
     let audio = switchers[0].getAudio();
-    //console.log(audio[8]);
     if(audio[8].on){
         switchers[0].runMacro(0);
         isMuted = true;
@@ -417,10 +389,7 @@
   }
 
   async function toggleMutePC() {
-    // console.log(switchers[0].getVisibleChannels());
-    // console.log(switchers[0].getAudio());
     let audio = switchers[0].getAudio();
-    // console.log(audio[0]);
     if(audio[0].on){
         switchers[0].runMacro(3);
         isMutedPC = true;
@@ -431,10 +400,7 @@
   }
 
   async function togglePip() {
-      // console.log(switchers[0].getVideo);
       let video = switchers[0].getVideo();
-      // console.log(video.ME);
-      // console.log(video.ME[0]);
       if(video.ME[0].upstreamKeyState[0]){
           switchers[0].runMacro(16);
           isPipUit = true;
@@ -446,12 +412,8 @@
 
         
  async function checkAtemState(){
-    // console.log(switchers[0].getVisibleChannels());
-    // console.log(switchers[0].getAudio());
     let audio = switchers[0].getAudio();
     let video = switchers[0].getVideo();
-    // console.log(audio[0]);
-    // console.log(audio[8]);
     if(audio[0].on){
         isMutedPC = false;
     } else {
@@ -495,7 +457,6 @@
     await fetch('http://'+ appConfig.atemServer +'/streamStatus')
       .then(res => res.json())
       .then(data => streamStatus = data)
-    console.log(streamStatus);
   }
 
   async function calculatePreviewClass() {
@@ -659,26 +620,10 @@
           </span>
       </a>
     </div>
-    <div class="navbar-item">
-      <!-- svelte-ignore a11y-missing-attribute -->
-      <a class:is-primary={isOchtend} class="button" on:click={setCameraProfile(ochtendProfiel, false)} title="Ochtend profiel camera">
-          <span class="icon">
-            <Icon path={mdiWhiteBalanceSunny} />
-          </span>
-      </a>
-    </div>
-    <div class="navbar-item">
-      <!-- svelte-ignore a11y-missing-attribute -->
-      <a class:is-primary={isAvond} class="button" on:click={setCameraProfile(avondProfiel, true)} title="Avond profiel camera">
-          <span class="icon">
-              <Icon path={mdiWeatherNight} />
-          </span>
-      </a>
-    </div>
   </div>
   <div class="navbar-item">
     <!-- svelte-ignore a11y-missing-attribute -->
-    <a class:is-danger={!cameraOn} class:is-primary={cameraOn} class="button" on:click={powerModeCameras} title="Toggle Camera">
+    <a class:is-danger={!cameraOn} class:is-primary={cameraOn} class="button" on:click={changePowerModeCameras} title="Toggle Camera">
         <span class="icon">
           {#if cameraOn}
             <Icon path={mdiCamera} />
