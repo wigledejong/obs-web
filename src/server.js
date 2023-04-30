@@ -52,7 +52,7 @@ const app = express();
 var expressWs = require('express-ws')(app);
 
 var appConfig = new SelfReloadJSON('src/config.json');
-logger.info(JSON.stringify(camConfig.cameras));
+logger.info('Config loaded:'+JSON.stringify(camConfig.cameras));
 var cameras = camConfig.cameras;
 
 const DeviceStatus = {
@@ -342,7 +342,6 @@ app.get('/stopStreamen', async function (request, response) {
   await httpUtils.get(statusUrl, reqOpts)
     .then((res) => {
       status = res.data;
-      //logger.info("Status stream in http :" + ((status["cur-status"] & DeviceStatus.statusLiving) == DeviceStatus.statusLiving));
     })
     .catch((err) => {
       logger.info('==> streamer response data:');
@@ -359,7 +358,6 @@ app.get('/startStreamen', async function (request, response) {
   await httpUtils.get(statusUrl, reqOpts)
     .then((res) => {
       status = res.data;
-      //logger.info("Status stream in http :" + ((status["cur-status"] & DeviceStatus.statusLiving) == DeviceStatus.statusLiving));
     })
     .catch((err) => {
       logger.info('==> streamer response data:');
@@ -376,7 +374,6 @@ app.get('/streamen', async function (request, response) {
   await httpUtils.get(statusUrl, reqOpts)
     .then((res) => {
       status = res.data;
-      //logger.info("Status stream in http :" + ((status["cur-status"] & DeviceStatus.statusLiving) == DeviceStatus.statusLiving));
     })
     .catch((err) => {
       logger.info('==> streamer response data:');
@@ -466,7 +463,7 @@ app.ws('/atemWebSocket', function(ws, req) {
 
   ws.on('message', function incoming(message) {
     /* JSON-RPC v2 compatible call */
-    logger.info(message.slice(0, 500));
+    logger.info('ATEM Switcher:'+message.slice(0, 500));
     const data = JSON.parse(message);
     const method = data.method;
     const params = data.params;

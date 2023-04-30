@@ -209,8 +209,8 @@
     if(getSession("sessie")){
       let sessieDate = new Date(getSession("sessie"));
       if (date.getTime() < sessieDate.getTime()) {
-          console.log(getSession("sessie"));
-          setTimeout(checkSession, 1000);
+          console.log('Check session on: '+ date.toISOString() +' result: '+getSession("sessie"));
+          setTimeout(checkSession, 60000);
        } else {
           console.log("Sessie verlopen");
           setSession("sessie");
@@ -305,7 +305,7 @@
       .then(data => uitzending = data);
     savedUitzending = uitzending;
     presetUitzending[savedUitzending].forEach(item => presets.push(item));
-    console.log(presets);
+    console.log('Presets: '+presets);
     await calculatePreviewClass();
   }
 
