@@ -243,7 +243,7 @@
 
     if(nextPreset == "Collecte" || nextPreset == "Begin dienst"){
        await changeAtemChannel(camera.atemChannel);
-       await setCameraPreset(presetsConfig["Orgel"]);
+       await setCameraPreset(presetsConfig["StartScene"]);
        await runMacro(4);
     }else{
        if (preset.preset){
@@ -333,6 +333,7 @@
 
   async function setCameraPreset(preset){
     let camera = cameras[preset.camera];
+    console.log(preset);
     let presetUrl =  "http://"+ camera.ip +"/cgi-bin/lums_configuration.cgi";
     await sendCommandToLumens(presetUrl, JSON.stringify({"cmd":"campresetrecall", "memnum": preset.preset}), camera);
   }

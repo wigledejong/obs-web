@@ -9,3 +9,4 @@ package-lock.json
 *.json
 /server-2021-09-11.log.1
 /server-2021-09-12.log.1
+/.vs/*

@@ -351,22 +351,43 @@
     "Tafel 4": {
       "camera": "camera1",
       "preset": "88"
+    },
+    "Orgel 2": {
+      "camera": "camera2",
+      "preset": "50"
+    },
+    "Binnenkomst 2": {
+      "camera": "camera1",
+      "preset": "55"
+    },
+    "StartScene": {
+      "camera": "camera3",
+      "preset": "1"
+    },
+    "Belijdenis 1": {
+      "camera": "camera2",
+      "preset": "51"
+    },
+    "Belijdenis 2": {
+      "camera": "camera3",
+      "preset": "6"
+    },
+    "Belijdenis 3": {
+      "camera": "camera1",
+      "preset": "51"
     }
   },
   "uitzendingVariant": [
-    "Uitvaart",
     "Kerkdienst",
+    "Uitvaart",
     "Huwelijk",
     "Avondmaal",
     "Avondmaal 2",
-    "Startdienst",
     "Dopen",
     "Interview",
     "Jongerendienst",
-    "KerkEnSchool",
-    "Diploma Uitreiking",
     "Orgel concert",
-    "Pasen"
+    "Belijdenis"
   ],
   "presetUitzending": {
     "Uitvaart": [
@@ -377,9 +398,9 @@
       "Binnenkomst",
       "Aansteken kaarsen",
       "Overzicht midden",
-      "Overzicht boven",
       "Overzicht opzij",
       "Overzicht uitgezoomd",
+      "Overzicht boven",
       "Gebed",
       "Orgel",
       "Organist",
@@ -395,6 +416,24 @@
       "Gebed",
       "Piano",
       "Overzicht opzij",
+      "Overzicht boven",
+      "Collecte",
+      "Einde dienst"
+    ],
+    "Belijdenis": [
+      "Begin dienst",
+      "Tafel",
+      "Lessenaar 3",
+      "Predikant",
+      "Organist",
+      "Orgel",
+      "Gebed",
+      "Piano",
+      "Belijdenis 1",
+      "Belijdenis 2",
+      "Belijdenis 3",
+      "Overzicht opzij",
+      "Overzicht midden",
       "Overzicht boven",
       "Collecte",
       "Einde dienst"
@@ -473,10 +512,12 @@
       "Lessenaar",
       "Knielen",
       "Knielen 2",
+      "Gebed",
       "Piano",
       "Binnenkomst",
-      "Overzicht boven",
-      "Overzicht opzij"
+      "Overzicht opzij",
+      "Overzicht midden",
+      "Overzicht boven"
     ],
     "Avondmaal": [
       "Begin dienst",
@@ -593,7 +634,7 @@
       "Organist",
       "Overzicht opzij",
       "Overzicht midden",
-      "Overizcht boven"
+      "Overzicht boven"
     ],
     "Oekraine": [
       "Begin dienst",
