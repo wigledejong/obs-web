@@ -90,7 +90,7 @@
       // update svelte
       atemWebSocket = atemWebSocket;
     });
-  
+
     atemWebSocket.addEventListener("message", async function(event) {
       let data = JSON.parse(event.data);
       let device = data.device || 0;
@@ -98,7 +98,7 @@
         case 'connect':
           switchers[device].connected = true;
           programChannel = switchers[0].returnProgramChannel();
-          
+
           break;
         case 'disconnect':
           switchers[device].connected = false;
@@ -113,7 +113,7 @@
             console.log("Websocket ATEM error");
             intervalID = setTimeout(connectAtem, (10*6000));
           }
-          await checkAtemState(); 
+          await checkAtemState();
       }
 
       return data;
@@ -171,7 +171,7 @@
     })
     .catch((err) => {
       isConnected = false;
-      
+
     });
     if(!isConnected){
       console.log("Niet geconnect");
@@ -180,11 +180,15 @@
   }
 
   async function startStream(){
-    await fetch('http://'+ appConfig.atemServer +'/startStreamen');
+    if (confirm("Weet je zeker dat je de stream wilt starten?") == true) {
+      await fetch('http://'+ appConfig.atemServer +'/startStreamen');
+    }
   }
 
   async function stopStream(){
-    await fetch('http://'+ appConfig.atemServer +'/stopStreamen');
+    if (confirm("Weet je zeker dat je de stream wilt stoppen?") == true) {
+      await fetch('http://' + appConfig.atemServer + '/stopStreamen');
+    }
   }
 
   async function streamStatus() {
@@ -239,33 +243,38 @@
     isLoaded = false;
     let nextPreset = e.currentTarget.textContent;
     let preset = presetsConfig[nextPreset];
-    let camera = cameras[preset.camera];
+    if(preset != null){
+      let camera = cameras[preset.camera];
 
-    if(nextPreset == "Collecte" || nextPreset == "Begin dienst"){
-       await changeAtemChannel(camera.atemChannel);
-       await setCameraPreset(presetsConfig["StartScene"]);
-       await runMacro(4);
-    }else{
-       if (preset.preset){
-         await setCameraPreset(preset);
-       }
-       await changeAtemChannel(camera.atemChannel);
-       if(nextPreset == "Predikant" || nextPreset == "Afkondigingen" || nextPreset == "Spreker"){
+      if(nextPreset == "Collecte" || nextPreset == "Begin dienst"){
+        await changeAtemChannel(camera.atemChannel);
+        await setCameraPreset(presetsConfig["StartScene"]);
+        await runMacro(4);
+      }else{
+        if (preset.preset){
+          await setCameraPreset(preset);
+        }
+        await changeAtemChannel(camera.atemChannel);
+        if(nextPreset == "Predikant" || nextPreset == "Afkondigingen" || nextPreset == "Spreker"){
           await runMacro(18);
-       } else{
+        } else{
           await runMacro(16);
-       }
+        }
+      }
+
+      const options = {
+        method: 'POST',
+        headers: new Headers({'content-type': 'application/json'}),
+        mode: 'no-cors',
+        body: nextPreset
+      };
+
+      await fetch('http://'+ appConfig.atemServer +'/savePreset', options);
+      getSavedPreset();
+
+    } else {
+      alert("De scene: "+nextPreset+" is onbekend");
     }
-
-    const options = {
-      method: 'POST',
-      headers: new Headers({'content-type': 'application/json'}),
-      mode: 'no-cors',
-      body: nextPreset
-    };
-
-    await fetch('http://'+ appConfig.atemServer +'/savePreset', options);
-    getSavedPreset();
     isLoaded = true;
   }
 
@@ -313,24 +322,6 @@
     switchers[0].runMacro(macro);
   }
 
-  async function setCameraProfile(profiel, avond){
-    for (let key in cameras){
-      let camera = cameras[key];
-      if(camera.ptz) {
-        let profileUrl = "http://" + camera.ip + "/cgi-bin/lums_piceffect.cgi";
-        for (let key of Object.keys(profiel)) {
-          let value = profiel[key];
-          if (appConfig.connectToLumens) {
-            await sendCommandToLumens(profileUrl, JSON.stringify({"cmd": key, "value": value}), camera);
-          }
-        }
-      }
-    }
-
-    isAvond = avond;
-    isOchtend = !avond;
-  }
-
   async function setCameraPreset(preset){
     let camera = cameras[preset.camera];
     console.log(preset);
@@ -351,7 +342,7 @@
         .then(res => res.json())
         .then(data => cameraStatus = data)
       console.log(cameraStatus);
-    }    
+    }
     isLoaded = true;
   }
 
@@ -411,7 +402,7 @@
       }
     }
 
-        
+
  async function checkAtemState(){
     let audio = switchers[0].getAudio();
     let video = switchers[0].getVideo();
@@ -431,7 +422,7 @@
         isPipUit = true;
     }
  }
-       
+
 
   async function getScreenshot() {
        if(!isConnected){
@@ -607,7 +598,7 @@
       </span>
     </a>
   </div>
-  
+
   <div class="navbar-start is-justify-content-center is-flex-grow-1">
     <div class="navbar-item">
       <!-- svelte-ignore a11y-missing-attribute -->
