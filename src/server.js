@@ -369,30 +369,6 @@ app.get('/startStreamen', async function (request, response) {
   response.send("gestart");
 });
 
-app.get('/streamen', async function (request, response) {
-  let status = '';
-  await httpUtils.get(statusUrl, reqOpts)
-    .then((res) => {
-      status = res.data;
-    })
-    .catch((err) => {
-      logger.info('==> streamer response data:');
-      logger.error(err);
-      response.send("error");
-    });
-
-  logger.info("Status stream:" + ((status["cur-status"] & DeviceStatus.statusLiving) == DeviceStatus.statusLiving));
-  if ((status["cur-status"] & DeviceStatus.statusLiving) == DeviceStatus.statusLiving) {
-    logger.info("Streamen stoppen");
-    httpUtils.get(stopStream, reqOpts);
-    response.send("gestopt");
-  } else {
-    logger.info("Streamen starten");
-    httpUtils.get(startStream, reqOpts);
-    response.send("gestart");
-  }
-});
-
 app.get('/screenshot.jpg', function (request, response) {
   let time = new Date().getTime();
   let data = '';

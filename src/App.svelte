@@ -180,16 +180,23 @@
 
   async function startStream(){
     if (confirm("Weet je zeker dat je de stream wilt starten?") == true) {
-      await fetch('http://'+ appConfig.atemServer +'/startStreamen');
+      isLoaded = false;
+      while(!streaming) {
+        await fetch('http://'+ appConfig.atemServer +'/startStreamen');
+        await streamStatus();
+      }
+      isLoaded = true;
     }
   }
 
   async function stopStream(){
     if (confirm("Weet je zeker dat je de stream wilt stoppen?") == true) {
+      isLoaded = false;
       while(streaming) {
         await fetch('http://' + appConfig.atemServer + '/stopStreamen');
         await streamStatus();
       }
+      isLoaded = true;
     }
   }
 

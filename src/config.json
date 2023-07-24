@@ -160,12 +160,12 @@
       "preset": "40"
     },
     "Band 3": {
-      "camera": "camera3",
-      "preset": "40"
-    },
-    "Band 4": {
       "camera": "camera2",
       "preset": "43"
+    },
+    "Band 4": {
+      "camera": "camera3",
+      "preset": "40"
     },
     "Pianist": {
       "camera": "camera2",
@@ -344,6 +344,10 @@
       "camera": "camera2",
       "preset": "12"
     },
+    "Tafel 5": {
+      "camera": "camera1",
+      "preset": "45"
+    },
     "Lessenaar 6": {
       "camera": "camera1",
       "preset": "15"
@@ -375,6 +379,10 @@
     "Belijdenis 3": {
       "camera": "camera1",
       "preset": "51"
+    },
+    "Scherm": {
+      "camera": "camera2",
+      "preset": "13"
     }
   },
   "uitzendingVariant": [
@@ -387,7 +395,7 @@
     "Interview",
     "Jongerendienst",
     "Orgel concert",
-    "Belijdenis"
+    "Diploma Uitreiking"
   ],
   "presetUitzending": {
     "Uitvaart": [
@@ -473,16 +481,17 @@
     "Jongerendienst": [
       "Begin dienst",
       "Tafel",
-      "Lessenaar 3",
+      "Lessenaar 6",
       "Predikant",
       "Band 1",
+      "Band 2",
       "Band 3",
-      "Band 4",
       "Pianist",
       "Organist",
       "Overzicht opzij",
+      "Overzicht midden 2",
       "Collecte",
-      "Einde dienst"
+      "Orgel"
     ],
     "Ingebruikname": [
       "Pianist",
@@ -514,6 +523,10 @@
       "Knielen 2",
       "Gebed",
       "Piano",
+      "Band 1",
+      "Band 2",
+      "Band 3",
+      "Organist",
       "Binnenkomst",
       "Overzicht opzij",
       "Overzicht midden",
@@ -552,8 +565,8 @@
     ],
     "Dopen": [
       "Begin dienst",
-      "Tafel",
-      "Lessenaar",
+      "Tafel 5",
+      "Lessenaar 4",
       "Predikant",
       "Dopen 1",
       "Dopen 2",
@@ -627,7 +640,7 @@
       "Overzicht opzij",
       "Overzicht uitgezoomd",
       "Orgel",
-      "Organist"
+      "Scherm"
     ],
     "Orgel concert": [
       "Orgel",
