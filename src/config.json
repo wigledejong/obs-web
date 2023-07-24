@@ -1,9 +1,682 @@
 {
-  "host": "192.168.178.18:4444",
-  "password": "Hillegondakerk",
-  "configuredStreamBitrate": 5000,
-  "beginDienst": "Begin dienst",
-  "audioDevice": "Audioinvoer Opname",
-  "screenSizeX": 1920,
-  "screenSizeY": 1080
+  "atemServer": "172.16.110.27:8081",
+  "connectToAtem": true,
+  "connectToLumens": true,
+  "cameras": {
+    "camera1": {
+      "ip": "172.16.110.246",
+      "naam": "Tegenover Preekstoel",
+      "user": "admin",
+      "password": "9999",
+      "atemChannel": "5",
+      "ptz": true
+    },
+    "camera2": {
+      "ip": "172.16.110.247",
+      "naam": "Noordbeuk Links",
+      "user": "admin",
+      "password": "9999",
+      "atemChannel": "6",
+      "ptz": true
+    },
+    "camera3": {
+      "ip": "172.16.110.248",
+      "naam": "Koor",
+      "user": "admin",
+      "password": "9999",
+      "atemChannel": "7",
+      "ptz": true
+    },
+    "MediaPlayer1": {
+      "naam": "Media Player 1",
+      "atemChannel": "3010",
+      "ptz": false
+    },
+    "MediaPlayer2": {
+      "naam": "Media Player 2",
+      "atemChannel": "3020",
+      "ptz": false
+    },
+    "PC1": {
+      "naam": "PC1",
+      "atemChannel": "1",
+      "ptz": false
+    },
+    "OrgelCamera": {
+      "naam": "OrgelCamera",
+      "atemChannel": "8",
+      "ptz": false
+    }
+  },
+  "presets": {
+    "Spreker Tafel": {
+      "camera": "camera1",
+      "preset": "1"
+    },
+    "Tafel": {
+      "camera": "camera1",
+      "preset": "1"
+    },
+    "Overzicht midden": {
+      "camera": "camera1",
+      "preset": "2"
+    },
+    "Overzicht midden 2": {
+      "camera": "camera1",
+      "preset": "12"
+    },
+    "Organist": {
+      "camera": "OrgelCamera"
+    },
+    "Organist 2": {
+      "camera": "camera1",
+      "preset": "3"
+    },
+    "Trompettist": {
+      "camera": "camera1",
+      "preset": "3"
+    },
+    "Overzicht uitgezoomd": {
+      "camera": "camera1",
+      "preset": "4"
+    },
+    "Preekstoel": {
+      "camera": "camera1",
+      "preset": "6"
+    },
+    "Predikant 2": {
+      "camera": "camera1",
+      "preset": "6"
+    },
+    "Avondmaal": {
+      "camera": "camera1",
+      "preset": "5"
+    },
+    "Avondmaal 2": {
+      "camera": "camera1",
+      "preset": "75"
+    },
+    "Beker & Brood": {
+      "camera": "MediaPlayer1"
+    },
+    "Overzicht opzij": {
+      "camera": "camera2",
+      "preset": "1"
+    },
+    "Zangers rechts": {
+      "camera": "camera2",
+      "preset": "3"
+    },
+    "Piano": {
+      "camera": "camera2",
+      "preset": "4"
+    },
+    "Piano 2": {
+      "camera": "camera3",
+      "preset": "76"
+    },
+    "Orgel": {
+      "camera": "camera3",
+      "preset": "1"
+    },
+    "Binnenkomst": {
+      "camera": "camera3",
+      "preset": "2"
+    },
+    "Overzicht boven": {
+      "camera": "camera3",
+      "preset": "3"
+    },
+    "Pinksterraam": {
+      "camera": "camera3",
+      "preset": "4"
+    },
+    "Einde dienst": {
+      "camera": "camera3",
+      "preset": "1"
+    },
+    "Dopen 1": {
+      "camera": "camera1",
+      "preset": "7"
+    },
+    "Dopen 2": {
+      "camera": "camera2",
+      "preset": "7"
+    },
+    "Gebed": {
+      "camera": "camera2",
+      "preset": "2"
+    },
+    "Tafel 2": {
+      "camera": "camera1",
+      "preset": "40"
+    },
+    "Band 1": {
+      "camera": "camera1",
+      "preset": "41"
+    },
+    "Band 2": {
+      "camera": "camera2",
+      "preset": "40"
+    },
+    "Band 3": {
+      "camera": "camera3",
+      "preset": "40"
+    },
+    "Band 4": {
+      "camera": "camera2",
+      "preset": "43"
+    },
+    "Pianist": {
+      "camera": "camera2",
+      "preset": "41"
+    },
+    "Pianist 3": {
+      "camera": "camera2",
+      "preset": "4"
+    },
+    "Spreker 3": {
+      "camera": "camera3",
+      "preset": "6"
+    },
+    "Spreker 2": {
+      "camera": "camera2",
+      "preset": "5"
+    },
+    "Gebed 2": {
+      "camera": "camera2",
+      "preset": "2"
+    },
+    "Kist": {
+      "camera": "camera1",
+      "preset": "8"
+    },
+    "Knielen": {
+      "camera": "camera1",
+      "preset": "11"
+    },
+    "Pianist 2": {
+      "camera": "camera1",
+      "preset": "12"
+    },
+    "Knielen 2": {
+      "camera": "camera2",
+      "preset": "14"
+    },
+    "Gewelf": {
+      "camera": "camera3",
+      "preset": "30"
+    },
+    "Podium": {
+      "camera": "camera2",
+      "preset": "22"
+    },
+    "Lessenaar Oud": {
+      "camera": "camera1",
+      "preset": "30"
+    },
+    "Lessenaar": {
+      "camera": "camera1",
+      "preset": "44"
+    },
+    "Podium 2": {
+      "camera": "camera1",
+      "preset": "23"
+    },
+    "Overzicht": {
+      "camera": "camera2",
+      "preset": "9"
+    },
+    "Aansteken kaarsen": {
+      "camera": "camera2",
+      "preset": "15"
+    },
+    "Aanvang": {
+      "camera": "MediaPlayer2"
+    },
+    "Collecte": {
+      "camera": "MediaPlayer1"
+    },
+    "Begin dienst": {
+      "camera": "MediaPlayer2"
+    },
+    "Begin dienst 2": {
+      "camera": "MediaPlayer2"
+    },
+    "OrgelCamera": {
+      "camera": "OrgelCamera"
+    },
+    "Camera Tegenover Podium": {
+      "camera": "camera1"
+    },
+    "Camera Opzij": {
+      "camera": "camera2"
+    },
+    "Camera van Boven": {
+      "camera": "camera3"
+    },
+    "Filmpje": {
+      "camera": "PC1"
+    },
+    "Samen": {
+      "camera": "camera1",
+      "preset": "55"
+    },
+    "Koor": {
+      "camera": "camera1",
+      "preset": "76"
+    },
+    "Spreker L": {
+      "camera": "camera1",
+      "preset": "56"
+    },
+    "Spreker R": {
+      "camera": "camera1",
+      "preset": "57"
+    },
+    "Spreker R2": {
+      "camera": "camera2",
+      "preset": "55"
+    },
+    "Samen opzij": {
+      "camera": "camera2",
+      "preset": "56"
+    },
+    "Overzicht boven2": {
+      "camera": "camera3",
+      "preset": "55"
+    },
+    "Glas in lood": {
+      "camera": "camera2",
+      "preset": "2"
+    },
+    "Glas in lood 2": {
+      "camera": "camera3",
+      "preset": "5"
+    },
+    "Lessenaar 2": {
+      "camera": "camera1",
+      "preset": "58"
+    },
+    "Lessenaar 3": {
+      "camera": "camera1",
+      "preset": "42"
+    },
+    "Pauze": {
+      "camera": "MediaPlayer1"
+    },
+    "Begin stream": {
+      "camera": "MediaPlayer2"
+    },
+    "Tekenen 1": {
+      "camera": "camera1",
+      "preset": "10"
+    },
+    "Tekenen 2": {
+      "camera": "camera2",
+      "preset": "10"
+    },
+    "Tekenen 3": {
+      "camera": "camera3",
+      "preset": "10"
+    },
+    "Lessenaar 4": {
+      "camera": "camera1",
+      "preset": "40"
+    },
+    "Lessenaar 5": {
+      "camera": "camera2",
+      "preset": "11"
+    },
+    "Avondmaal 3": {
+      "camera": "camera1",
+      "preset": "9"
+    },
+    "Predikant": {
+      "camera": "camera1",
+      "preset": "13"
+    },
+    "Vertaler": {
+      "camera": "camera1",
+      "preset": "14"
+    },
+    "Tafel 3": {
+      "camera": "camera2",
+      "preset": "12"
+    },
+    "Lessenaar 6": {
+      "camera": "camera1",
+      "preset": "15"
+    },
+    "Tafel 4": {
+      "camera": "camera1",
+      "preset": "88"
+    },
+    "Orgel 2": {
+      "camera": "camera2",
+      "preset": "50"
+    },
+    "Binnenkomst 2": {
+      "camera": "camera1",
+      "preset": "55"
+    },
+    "StartScene": {
+      "camera": "camera3",
+      "preset": "1"
+    },
+    "Belijdenis 1": {
+      "camera": "camera2",
+      "preset": "51"
+    },
+    "Belijdenis 2": {
+      "camera": "camera3",
+      "preset": "6"
+    },
+    "Belijdenis 3": {
+      "camera": "camera1",
+      "preset": "51"
+    }
+  },
+  "uitzendingVariant": [
+    "Kerkdienst",
+    "Uitvaart",
+    "Huwelijk",
+    "Avondmaal",
+    "Avondmaal 2",
+    "Dopen",
+    "Interview",
+    "Jongerendienst",
+    "Orgel concert",
+    "Belijdenis"
+  ],
+  "presetUitzending": {
+    "Uitvaart": [
+      "Spreker Tafel",
+      "Lessenaar",
+      "Preekstoel",
+      "Kist",
+      "Binnenkomst",
+      "Aansteken kaarsen",
+      "Overzicht midden",
+      "Overzicht opzij",
+      "Overzicht uitgezoomd",
+      "Overzicht boven",
+      "Gebed",
+      "Orgel",
+      "Organist",
+      "Piano"
+    ],
+    "Kerkdienst": [
+      "Begin dienst",
+      "Tafel",
+      "Lessenaar",
+      "Predikant",
+      "Organist",
+      "Orgel",
+      "Gebed",
+      "Piano",
+      "Overzicht opzij",
+      "Overzicht boven",
+      "Collecte",
+      "Einde dienst"
+    ],
+    "Belijdenis": [
+      "Begin dienst",
+      "Tafel",
+      "Lessenaar 3",
+      "Predikant",
+      "Organist",
+      "Orgel",
+      "Gebed",
+      "Piano",
+      "Belijdenis 1",
+      "Belijdenis 2",
+      "Belijdenis 3",
+      "Overzicht opzij",
+      "Overzicht midden",
+      "Overzicht boven",
+      "Collecte",
+      "Einde dienst"
+    ],
+    "Startdienst": [
+      "Begin dienst",
+      "Tafel",
+      "Lessenaar 3",
+      "Predikant",
+      "Organist",
+      "Orgel",
+      "Gebed",
+      "Band 4",
+      "Piano",
+      "Overzicht opzij",
+      "Overzicht boven",
+      "Collecte"
+    ],
+    "Pasen": [
+      "Begin dienst 2",
+      "Tafel",
+      "Lessenaar",
+      "Predikant",
+      "Organist",
+      "Trompettist",
+      "Orgel",
+      "Gebed",
+      "Piano",
+      "Piano 2",
+      "Koor",
+      "Overzicht opzij",
+      "Overzicht midden",
+      "Overzicht boven",
+      "Collecte",
+      "Einde dienst"
+    ],
+    "Jongerendienst": [
+      "Begin dienst",
+      "Tafel",
+      "Lessenaar 3",
+      "Predikant",
+      "Band 1",
+      "Band 3",
+      "Band 4",
+      "Pianist",
+      "Organist",
+      "Overzicht opzij",
+      "Collecte",
+      "Einde dienst"
+    ],
+    "Ingebruikname": [
+      "Pianist",
+      "Pianist 2",
+      "Organist",
+      "Orgel",
+      "Podium",
+      "Podium 2",
+      "Overzicht boven",
+      "Overzicht opzij",
+      "Overzicht midden",
+      "Gewelf"
+    ],
+    "Uitvaart 2": [
+      "Spreker 2",
+      "Binnenkomst",
+      "Orgel",
+      "Organist",
+      "Overzicht boven",
+      "Overzicht",
+      "Piano"
+    ],
+    "Huwelijk": [
+      "Orgel",
+      "Preekstoel",
+      "Tafel",
+      "Lessenaar",
+      "Knielen",
+      "Knielen 2",
+      "Gebed",
+      "Piano",
+      "Binnenkomst",
+      "Overzicht opzij",
+      "Overzicht midden",
+      "Overzicht boven"
+    ],
+    "Avondmaal": [
+      "Begin dienst",
+      "Tafel 4",
+      "Lessenaar",
+      "Predikant",
+      "Avondmaal",
+      "Organist",
+      "Orgel",
+      "Gebed",
+      "Piano",
+      "Overzicht opzij",
+      "Overzicht boven",
+      "Einde dienst",
+      "Collecte"
+    ],
+    "Avondmaal 2": [
+      "Begin dienst",
+      "Tafel",
+      "Lessenaar",
+      "Predikant",
+      "Avondmaal 2",
+      "Avondmaal 3",
+      "Beker & Brood",
+      "Organist",
+      "Orgel",
+      "Gebed",
+      "Piano",
+      "Overzicht opzij",
+      "Overzicht midden",
+      "Overzicht boven"
+    ],
+    "Dopen": [
+      "Begin dienst",
+      "Tafel",
+      "Lessenaar",
+      "Predikant",
+      "Dopen 1",
+      "Dopen 2",
+      "Organist",
+      "Orgel",
+      "Gebed",
+      "Piano",
+      "Overzicht opzij",
+      "Overzicht boven",
+      "Overzicht midden 2",
+      "Einde dienst",
+      "Collecte"
+    ],
+    "Kerst": [
+      "Aanvang",
+      "Tafel",
+      "Lessenaar",
+      "Predikant",
+      "Organist",
+      "Orgel",
+      "Gebed",
+      "Piano",
+      "Overzicht opzij",
+      "Overzicht boven",
+      "Overzicht midden",
+      "Collecte"
+    ],
+    "Interview": [
+      "Begin stream",
+      "Pauze",
+      "Samen",
+      "Samen opzij",
+      "Spreker L",
+      "Spreker R",
+      "Spreker R2",
+      "Lessenaar 2",
+      "Overzicht opzij",
+      "Overzicht boven2",
+      "Organist",
+      "Orgel",
+      "Glas in lood",
+      "Glas in lood 2"
+    ],
+    "Ambtsdragers": [
+      "Begin dienst",
+      "Tafel",
+      "Lessenaar",
+      "Predikant",
+      "Organist",
+      "Orgel",
+      "Gebed",
+      "Piano",
+      "Overzicht opzij",
+      "Overzicht boven",
+      "Overzicht midden",
+      "Binnenkomst",
+      "Knielen",
+      "Knielen 2",
+      "Collecte",
+      "Einde dienst"
+    ],
+    "Diploma Uitreiking": [
+      "Begin stream",
+      "Tekenen 1",
+      "Tekenen 2",
+      "Tekenen 3",
+      "Lessenaar 4",
+      "Lessenaar 5",
+      "Overzicht midden",
+      "Overzicht boven",
+      "Overzicht opzij",
+      "Overzicht uitgezoomd",
+      "Orgel",
+      "Organist"
+    ],
+    "Orgel concert": [
+      "Orgel",
+      "Organist",
+      "Overzicht opzij",
+      "Overzicht midden",
+      "Overzicht boven"
+    ],
+    "Oekraine": [
+      "Begin dienst",
+      "Tafel",
+      "Lessenaar",
+      "Vertaler",
+      "Organist",
+      "Orgel",
+      "Gebed",
+      "Piano",
+      "Overzicht opzij",
+      "Overzicht boven",
+      "Collecte",
+      "Einde dienst"
+    ],
+    "KerkEnSchool": [
+      "Begin dienst",
+      "Tafel 3",
+      "Lessenaar 6",
+      "Predikant",
+      "Orgel",
+      "Band 1",
+      "Band 3",
+      "Band 4",
+      "Pianist",
+      "Overzicht opzij",
+      "Overzicht midden",
+      "Collecte"
+    ]
+  },
+  "avondProfiel": {
+    "gammanameindex": "3",
+    "brightnessnameindex": "7",
+    "huenameindex": "10",
+    "saturationnameindex": "2",
+    "sharpnessnameindex": "7"
+  },
+  "ochtendProfiel": {
+    "gammanameindex": "3",
+    "brightnessnameindex": "7",
+    "huenameindex": "10",
+    "saturationnameindex": "2",
+    "sharpnessnameindex": "7"
+  }
 }

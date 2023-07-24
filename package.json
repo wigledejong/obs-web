@@ -4,29 +4,46 @@
   "scripts": {
     "build": "rollup -c",
     "dev": "rollup -c -w",
-    "start": "sirv public --host"
+    "start": "concurrently --kill-others \"npm run obsStart\" \"npm run atemServer\"",
+    "obsStart": "sirv public --host",
+    "atemServer": "node src/server.js"
   },
   "devDependencies": {
     "@fullhuman/postcss-purgecss": "^3.0.0",
     "@mdi/js": "^5.8.55",
     "@rollup/plugin-commonjs": "^14.0.0",
-    "@rollup/plugin-html": "^0.2.0",
+    "@rollup/plugin-html": "^0.2.3",
     "@rollup/plugin-json": "^4.1.0",
     "@rollup/plugin-node-resolve": "^10.0.0",
-    "bulma": "^0.9.1",
+    "bufferutil": "^4.0.3",
+    "bulma": "^0.9.2",
     "compare-versions": "^3.6.0",
+    "concurrently": "^6.0.0",
     "mdi-svelte": "^1.1.2",
     "obs-websocket-js": "^4.0.2",
-    "rollup": "^2.33.2",
+    "rollup": "^2.43.0",
     "rollup-plugin-livereload": "^2.0.0",
     "rollup-plugin-node-polyfills": "^0.2.1",
     "rollup-plugin-postcss": "^4.0.0",
     "rollup-plugin-svelte": "^7.0.0",
     "rollup-plugin-terser": "^7.0.2",
-    "sass": "^1.29.0",
-    "svelte": "^3.29.7"
+    "sass": "^1.32.8",
+    "sirv-cli": "^1.0.11",
+    "svelte": "^3.35.0",
+    "utf-8-validate": "^5.0.4"
   },
   "dependencies": {
-    "sirv-cli": "^1.0.8"
+    "applest-atem": "^0.2.4",
+    "cors": "^2.8.5",
+    "express": "^4.17.1",
+    "express-ws": "^4.0.0",
+    "node-fetch": "^2.6.5",
+    "pngjs": "^6.0.0",
+    "self-reload-json": "^0.4.0",
+    "winston": "^3.3.3",
+    "winston-daily-rotate-file": "^4.5.5",
+    "ws": "^7.3.0",
+    "zlib": "^1.0.5",
+    "zlib-sync": "^0.1.7"
   }
 }

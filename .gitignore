@@ -3,3 +3,10 @@
 /public/index.html
 package-lock.json
 .DS_Store
+/server-2021-06-10-13.log
+*.gz
+*.log
+*.json
+/server-2021-09-11.log.1
+/server-2021-09-12.log.1
+/.vs/*

@@ -9,6 +9,7 @@ import nodePolyfills from 'rollup-plugin-node-polyfills';
 import html from '@rollup/plugin-html';
 import json from '@rollup/plugin-json';
 
+
 const production = !process.env.ROLLUP_WATCH;
 const version = String(require('child_process').execSync('git rev-parse --short HEAD')).trim(); // append short git commit to bundles
 
@@ -22,7 +23,9 @@ export default {
   },
   plugins: [
     svelte({
-      dev: !production
+      compilerOptions : {
+        dev: !production
+      },
     }),
 
     postcss({ extract: true, plugins: (production ? [purgecss({ content: ["./src/**/*.svelte", "./rollup.config.js"] })] : []), minimize: production }),
@@ -34,9 +37,7 @@ export default {
     }),
     commonjs(),
     nodePolyfills(),
-    json({
-      compact: true
-    }),
+    json(),
 
     html({
       template: async ({ attributes, files, meta, publicPath, title }) => {
