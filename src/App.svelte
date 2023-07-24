@@ -3,10 +3,9 @@
   // Imports
   import { onMount } from 'svelte';
   import './style.scss';
-  import { mdiCameraBurst, mdiCctv, mdiCameraOff, mdiCamera, mdiWeatherNight, mdiWhiteBalanceSunny, mdiCommentTextOutline, mdiMicrophoneOff, mdiMicrophone, mdiBorderVertical,
-  mdiAccessPoint, mdiAccessPointOff, mdiRecord, mdiStop, mdiCheckboxMarked, mdiAlert, mdiCloseOctagon, mdiHeadphonesOff, mdiHeadphones, mdiPictureInPictureTopRight} from '@mdi/js';
+  import { mdiCameraOff, mdiCamera, mdiMicrophoneOff, mdiMicrophone, mdiAccessPoint, mdiAccessPointOff, mdiHeadphonesOff,
+    mdiAccessPointRemove, mdiHeadphones, mdiPictureInPictureTopRight} from '@mdi/js';
   import Icon from 'mdi-svelte';
-  import compareVersions from 'compare-versions';
 
   import { ATEM } from "./atem.js";
 
@@ -174,7 +173,7 @@
 
     });
     if(!isConnected){
-      console.log("Niet geconnect");
+      console.log("Niet geconnect met streamer");
       setTimeout(loginStreamer, 1000);
     }
   }
@@ -187,7 +186,10 @@
 
   async function stopStream(){
     if (confirm("Weet je zeker dat je de stream wilt stoppen?") == true) {
-      await fetch('http://' + appConfig.atemServer + '/stopStreamen');
+      while(streaming) {
+        await fetch('http://' + appConfig.atemServer + '/stopStreamen');
+        await streamStatus();
+      }
     }
   }
 
@@ -534,6 +536,15 @@
                   Stop stream
                 </span>
               </a>
+            {:else if !isConnected}
+               <a class="button is-dark" on:click={stopStream}>
+                  <span class="icon">
+                    <Icon path={mdiAccessPointRemove} />
+                  </span>
+                 <span>
+                    Geen connectie
+                  </span>
+               </a>
             {:else}
               <a class="button is-primary" on:click={startStream}>
                 <span class="icon">
@@ -561,6 +572,10 @@
                 {#if savedPreset == preset}
                   <a on:click={setPreset} class="tile is-child is-primary notification">
                         <p class="subtitle has-text-centered is-size-7-mobile">{preset}</p>
+                  </a>
+                {:else if !isConnected}
+                  <a on:click={setPreset} class="tile is-child is-dark notification">
+                    <p class="subtitle has-text-centered is-size-7-mobile">{preset}</p>
                   </a>
                 {:else}
                   <a on:click={setPreset} class="tile is-child is-info notification">
