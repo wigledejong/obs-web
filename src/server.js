@@ -11,6 +11,7 @@ const fetch = require('node-fetch');
 const winston = require('winston');
 
 const DailyRotateFile = require('winston-daily-rotate-file');
+const { json } = require('express');
 
 var transport = new DailyRotateFile({
   filename: 'server-%DATE%.log',
@@ -96,6 +97,7 @@ const startStream = `http://${streamerIP}/usapi?method=start-live`;
 const stopStream = `http://${streamerIP}/usapi?method=stop-live`;
 const loginUrl = `http://${streamerIP}/usapi?method=login&id=${userName}&pass=${password}`;
 const screenShotUrl = `http://${streamerIP}/tmp/sbox-snapshot/sbox-quarter.jpg?v=`;
+const streamerUrl = `http://${streamerIP}/`;
 
 let preset = '';
 let uitzending = '';
@@ -242,6 +244,85 @@ async function turnOnCameras() {
   }
 }
 
+async function checkStreamer() {
+  let status = false;
+  try {
+    const response = await httpUtils.get(streamerUrl);
+    logger.info(JSON.stringify(response));
+    status = true;
+  } catch (err) {
+    logger.error(err)
+    if (err === "socket hang up") {
+      logger.error("Streamer is niet beschikbaar camera's gaan uit");
+      await turnOffCameras();
+    }
+    status = false;
+  }
+  return status;
+}
+
+async function loginStreamer() {
+  const streamer = await checkStreamer();
+  logger.info("Staat streamer aan:"+streamer);
+  if(streamer) {
+    logger.info("Login to streamer");
+    // login
+    logger.info('==> 1. streamer login');
+    await httpUtils.get(loginUrl)
+      .then((loginRes) => {
+        logger.info("Login response: " + JSON.stringify(loginRes));
+        // get Cookie info
+        if (loginRes['data']['result'] === 0) {
+          resCookies = loginRes['headers']['set-cookie'];
+          logger.info('==> 2. streamer get login cookie:');
+          logger.info(resCookies);
+
+          // set response Cookie
+          reqOpts = {
+            headers: {
+              'Cookie': resCookies
+            }
+          }
+          return "oke";
+        } else {
+          let errorMessage = "Inlog was niet succesvol:" + loginRes['data']['result'];
+          throw errorMessage;
+        }        
+      })
+      .catch(async (err) => {
+        logger.info('==> streamer response data:');
+        logger.error(err);
+        throw err;
+      });
+  } else {
+    throw "Geen connectie";
+  }
+  
+}
+
+async function checkStreamStatus() {
+  try {
+    let res = await httpUtils.get(statusUrl, reqOpts);
+    logger.info('Streamer response statusCode: ' + res['statusCode']);
+    const data = res.data;
+    logger.info('Streamer response functionalStatus: ' + data['result']);
+    if (data['result'] === -17) {
+      logger.info("Niet meer ingelogd. Opnieuw inloggen");
+      await loginStreamer();
+    }
+    liveStatus = JSON.stringify(data['live-status']);
+    logger.info('Streamer:' + liveStatus);
+    streamStatus = ((data['cur-status'] & DeviceStatus.statusLiving) == DeviceStatus.statusLiving)
+    logger.info("Status stream:" + streamStatus);
+    return streamStatus;
+  }
+  catch (err) {
+    logger.info('==> streamerstatus error:');
+    logger.error(err);
+    throw err;
+  }
+}
+
 function loadConfig() {
   appConfig = new SelfReloadJSON('src/config.json');
 }
@@ -258,42 +339,28 @@ app.get('/config', function(request, response){
 });
 
 app.get('/camerasOff', async function (request, response) {
+  logger.info("Verzoek om camera's uit te zetten");
   await turnOffCameras();
   response.send(statusCameras);
 });
 
 app.get('/camerasOn', async function (request, response) {
+  logger.info("Verzoek om camera's aan te zetten");
   await turnOnCameras();
   response.send(statusCameras);
 });
 
 app.get('/loginStreamer', async function (request, response) {
+  logger.info("Verzoek om in te loggen");
   await checkStatusCameras();
-  logger.info("Login to streamer");
-  // login
-  logger.info('==> 1. streamer login');
-  await httpUtils.get(loginUrl)
-    .then((loginRes) => {
-      // get Cookie info
-      resCookies = loginRes['headers']['set-cookie'];
-      logger.info('==> 2. streamer get login cookie:');
-      logger.info(resCookies);
-
-      // set response Cookie
-      reqOpts = {
-        headers: {
-          'Cookie': resCookies
-        }
-      }
+  await loginStreamer()
+    .then(() => {
       response.send("oke");
     })
-    .catch(async (err) => {
-      logger.info('==> streamer response data:');
+    .catch((err) => {
       logger.error(err);
-      await turnOffCameras();
-      response.status(400).end("error");
+      response.status(404).end("error");
     });
-
 })
 
 app.get('/getCameraStatus', async function (request, response) {
@@ -304,69 +371,41 @@ app.get('/getCameraStatus', async function (request, response) {
 
 
 app.get('/streamStatus', async function (request, response) {
-  httpUtils.get(statusUrl, reqOpts)
-    .then((res) => {
-      const data = res.data;
-      liveStatus = JSON.stringify(data["live-status"]);
-      logger.info('Streamer:'+liveStatus);
-      streamStatus = ((data["cur-status"] & DeviceStatus.statusLiving) == DeviceStatus.statusLiving)
-      logger.info("Status stream:" + streamStatus);
-      response.send(streamStatus);
-    })
-    .catch(async (err) => {
-      logger.info('==> streamer response data:');
-      logger.error(err);
-      await turnOffCameras();
-      response.status(400).end("error");
-  });
-});
-
-app.get('/streamData', function (request, response) {
-  logger.info("Stream data wordt opgehaald");
-  httpUtils.get(statusUrl, reqOpts)
-    .then((res) => {
-      const data = res.data;
-      liveStatus = JSON.stringify(data["live-status"]);
-      logger.info('Streamer:'+liveStatus);
-      response.send(liveStatus);
-    })
-    .catch((err) => {
-      logger.info('==> streamer response data:');
-      logger.error(err);
-      response.send("error");
-  });
+  logger.info("Status stream wordt opgevraagd");
+  try {
+    let status = await checkStreamStatus();
+    response.send(status);
+  }
+  catch (err) {
+    response.status(404).end("error");
+  }
 });
 
 app.get('/stopStreamen', async function (request, response) {
-  let status = '';
-  await httpUtils.get(statusUrl, reqOpts)
-    .then((res) => {
-      status = res.data;
-    })
-    .catch((err) => {
-      logger.info('==> streamer response data:');
-      logger.error(err);
-      response.send("error");
-    });
-  logger.info("Streamen stoppen");
-  httpUtils.get(stopStream, reqOpts);
-  response.send("gestopt");
+  logger.info("Verzoek om stream te stoppen");
+  let status = await checkStreamStatus();
+  if (status) {
+    logger.info("Streamen stoppen");
+    httpUtils.get(stopStream, reqOpts);
+    response.send("gestopt");
+  } else {
+    logger.info("Stream was al gestopt");
+    response.send("gestopt");
+  }
+  
 });
 
 app.get('/startStreamen', async function (request, response) {
-  let status = '';
-  await httpUtils.get(statusUrl, reqOpts)
-    .then((res) => {
-      status = res.data;
-    })
-    .catch((err) => {
-      logger.info('==> streamer response data:');
-      logger.error(err);
-      response.send("error");
-    });
-  logger.info("Streamen starten");
-  httpUtils.get(startStream, reqOpts);
-  response.send("gestart");
+  logger.info("Verzoek om stream te starten");
+  let status = await checkStreamStatus();
+  if (!status) {
+    logger.info("Streamen starten");
+    httpUtils.get(startStream, reqOpts);
+    response.send("gestart");
+  } else {
+    logger.info("Stream was al gestart");
+    response.send("gestart");
+  }
 });
 
 app.get('/screenshot.jpg', function (request, response) {
@@ -396,12 +435,6 @@ app.get('/screenshot.jpg', function (request, response) {
       response.send(err)
     })
     .end();
-});
-
-app.post('/saveStreamStatus', function (request, response) {
-  logger.info("streamStatus wordt opgeslagen: " + request.body);
-  streamStatuss = request.body;
-  response.send("oke");
 });
 
 app.get('/getPreset', function(request, response){
