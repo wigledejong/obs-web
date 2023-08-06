@@ -117,7 +117,7 @@ for (var switcher of atemConfig.switchers) {
   switchers.push(atem);
 
   atem.on('stateChanged', (err, state) => {
-    // logger.info('atem stateChanged')
+    //logger.info('atem stateChanged:' + JSON.stringify(state))
     broadcast(JSON.stringify(state));
   })
   atem.on('connect', (err) => {
@@ -127,6 +127,10 @@ for (var switcher of atemConfig.switchers) {
   atem.on('disconnect', (err) => {
     logger.info('atem disconnected');
     broadcast(JSON.stringify({ method: 'disconnect', device: atem.device }));
+  })
+  atem.on('error', (err) => {
+    logger.info('atem error:' + err);
+    boradcast(JSON.stringify({ method: 'error', device: atem.device }));
   })
   device += 1;
 }
@@ -518,4 +522,6 @@ app.ws('/atemWebSocket', function(ws, req) {
   });
 });
 
-app.listen(atemConfig.server.port, atemConfig.server.host);
+app.listen(atemConfig.server.port, atemConfig.server.host, () => {
+  logger.info("Express server is listening");
+});

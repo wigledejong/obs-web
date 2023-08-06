@@ -364,7 +364,7 @@
       "camera": "camera1",
       "preset": "55"
     },
-    "StartScene": {
+    "PIPScene": {
       "camera": "camera3",
       "preset": "1"
     },

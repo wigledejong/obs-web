@@ -11,13 +11,10 @@
 
   onMount(async () => {
     await loadConfig();
-    await statusCameras();
     await loginStreamer();
     await streamStatus();
     await getSavedUitzending();
     await getSavedPreset();
-    await checkSession();
-    await connectAtem();
     await getScreenshot();
     if ('serviceWorker' in navigator) {
       await navigator.serviceWorker.register('/service-worker.js');
@@ -54,6 +51,7 @@
     datum,
     previewClass,
     streaming,
+    atemConnected,
     isLoaded = false;
   let isMutedPC = true;
   let switchers = [];
@@ -95,11 +93,12 @@
       let device = data.device || 0;
       switch (data.method) {
         case 'connect':
+          console.log("Atem connected");
           switchers[device].connected = true;
           programChannel = switchers[0].returnProgramChannel();
-
           break;
         case 'disconnect':
+          console.log("Atem disconnected");
           switchers[device].connected = false;
           break;
         default:
@@ -110,7 +109,6 @@
           }
           else {
             console.log("Websocket ATEM error");
-            intervalID = setTimeout(connectAtem, (10*6000));
           }
           await checkAtemState();
       }
@@ -120,11 +118,9 @@
     });
     atemWebSocket.addEventListener("error", function() {
       console.log("Websocket ATEM error");
-      intervalID = setTimeout(connectAtem, 1000);
-    });``
+    });
     atemWebSocket.addEventListener("close", function() {
       console.log("Websocket ATEM closed");
-      intervalID = setTimeout(connectAtem, 1000);
     });
   }
 
@@ -162,15 +158,29 @@
 
   async function loginStreamer(){
     console.log("Login Streamer");
+    let sessie = getSession("sessie");
+    let headers = {
+      ClientSession: sessie
+     };
     await fetch('http://'+ appConfig.atemServer +'/loginStreamer')
-    .then((res) => {
+    .then(async (res) => {
+      console.log(res);
       if (res.statusText == "OK"){
         isConnected = true;
+        await statusCameras();
+        await checkSession();
+        if(!atemWebSocket || atemWebSocket.readyState != WebSocket.OPEN) {
+          console.log("atem is niet connected");
+          await connectAtem();
+        }else{
+          console.log("atem is connected");
+        }
+
       }
     })
     .catch((err) => {
-      isConnected = false;
-
+      console.log(err);
+      isConnected = false;   
     });
     if(!isConnected){
       console.log("Niet geconnect met streamer");
@@ -213,6 +223,7 @@
     setTimeout(streamStatus, 1000);
    } else {
       streaming = false;
+      setTimeout(streamStatus, 1000);
    }
   }
 
@@ -257,7 +268,7 @@
 
       if(nextPreset == "Collecte" || nextPreset == "Begin dienst"){
         await changeAtemChannel(camera.atemChannel);
-        await setCameraPreset(presetsConfig["StartScene"]);
+        await setCameraPreset(presetsConfig["PIPScene"]);
         await runMacro(4);
       }else{
         if (preset.preset){
