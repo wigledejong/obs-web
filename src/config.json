@@ -203,6 +203,10 @@
       "camera": "camera2",
       "preset": "14"
     },
+    "Knielen 3": {
+      "camera": "camera1",
+      "preset": "16"
+    },
     "Gewelf": {
       "camera": "camera3",
       "preset": "30"
@@ -395,7 +399,8 @@
     "Interview",
     "Jongerendienst",
     "Orgel concert",
-    "Diploma Uitreiking"
+    "Diploma Uitreiking",
+    "Ambtsdragers"
   ],
   "presetUitzending": {
     "Uitvaart": [
@@ -622,9 +627,9 @@
       "Overzicht opzij",
       "Overzicht boven",
       "Overzicht midden",
-      "Binnenkomst",
       "Knielen",
       "Knielen 2",
+      "Knielen 3",
       "Collecte",
       "Einde dienst"
     ],

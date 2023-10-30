@@ -12,6 +12,7 @@ const winston = require('winston');
 
 const DailyRotateFile = require('winston-daily-rotate-file');
 const { json } = require('express');
+const { ZLIB_VERSION } = require('zlib-sync');
 
 var transport = new DailyRotateFile({
   filename: 'server-%DATE%.log',
@@ -104,6 +105,7 @@ let uitzending = '';
 let streamStatus = '';
 let liveStatus = '';
 let statusCameras = [];
+let camerasStatus = '';
 
 let CLIENTS = expressWs.getWss().clients;
 
@@ -150,19 +152,21 @@ async function checkStatusCameras() {
 }
 
 async function checkCameraStatus(camera) { 
-  //logger.info("Check camera status: " + camera.naam);
+  // logger.info("Check camera status: " + camera.naam);
   if (camera.ptz) {
     await httpUtils.get('http://' + camera.ip + '/powerModeInq')
       .then((result) => {
         let cameraStatus = JSON.parse(result['data']);
         logger.info("Camera: " + camera.naam + "Status: " + JSON.stringify(cameraStatus.POWERMODE));
         camera.status = cameraStatus.POWERMODE;
-        statusCameras.push(camera);
+        camerasStatus = camera.status;
       })
       .catch((err) => {
+        camera.status = "Error";
         logger.info('==> Camera response data:');
         logger.error(err);
       });
+    statusCameras.push(camera);
   }
 }
 
@@ -257,8 +261,11 @@ async function checkStreamer() {
   } catch (err) {
     logger.error(err)
     if (err === "socket hang up") {
-      logger.error("Streamer is niet beschikbaar camera's gaan uit");
-      await turnOffCameras();
+      logger.error("Streamer is niet beschikbaar");
+      if (camerasStatus != "OFF") {
+        logger.info("camera's gaan uit");
+        await turnOffCameras();
+      }      
     }
     status = false;
   }
@@ -323,7 +330,7 @@ async function checkStreamStatus() {
   catch (err) {
     logger.info('==> streamerstatus error:');
     logger.error(err);
-    throw err;
+    return 'error';
   }
 }
 
@@ -356,7 +363,6 @@ app.get('/camerasOn', async function (request, response) {
 
 app.get('/loginStreamer', async function (request, response) {
   logger.info("Verzoek om in te loggen");
-  await checkStatusCameras();
   await loginStreamer()
     .then(() => {
       response.send("oke");
@@ -371,6 +377,22 @@ app.get('/getCameraStatus', async function (request, response) {
   logger.info("Status cameras wordt opgevraagd.");
   await checkStatusCameras();
   response.send(statusCameras);
+});
+
+app.get('/getStatus', async function (request, response) {
+  logger.info("Status stream en cameras wordt opgevraagd.");
+  try {
+    await checkStatusCameras();
+    let streamStatus = await checkStreamStatus();
+    let responseBody = {
+      statusCamera: statusCameras,
+      statusStream: streamStatus
+    }
+    response.json(responseBody);
+  }
+  catch (err) {
+    response.status(404).end("error");
+  }
 });
 
 
