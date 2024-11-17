@@ -99,7 +99,57 @@ HttpUtils.prototype.post = async function (url, body = {}) {
   })
 }
 
+//download
+HttpUtils.prototype.download = function (url, fileName, options = {}) {
+  return new Promise((resolve, reject) => {
+    const urlInfo = new URL(url);
+    var file = fs.createWriteStream(fileName, { flags: "wx" });
+    let opts = {
+      hostname: urlInfo.hostname,
+      path: urlInfo.pathname + urlInfo.search,
+      port: urlInfo.port || 80,
+      headers: options.headers || {},
+      timeout: options.timeout || 5000,
+      mode: 'no-cors',
+    }
+    // set timeout, default 5s
+    const requestTimerID = setTimeout(() => {
+      httpGet.abort()
+    }, opts.timeout)
 
+    const request = http.get(opts, response => {
+      clearTimeout(requestTimerID)
+      if (response.statusCode === 200) {
+        response.pipe(file);
+      } else {
+        file.close();
+        fs.unlink(fileName, () => { }); // Delete temp file
+        reject(`Server responded with ${response.statusCode}: ${response.statusMessage}`);
+      }
+    });
+
+    request.on("error", err => {
+      file.close();
+      fs.unlink(fileName, () => { }); // Delete temp file
+      reject(err.message);
+    });
+
+    file.on("finish", () => {
+      resolve();
+    });
+
+    file.on("error", err => {
+      file.close();
+
+      if (err.code === "EEXIST") {
+        reject("File already exists");
+      } else {
+        fs.unlink(fileName, () => { }); // Delete temp file
+        reject(err.message);
+      }
+    });
+  });
+}
 
 // upload
 HttpUtils.prototype.upload = function (url, filePath, options = {}) {

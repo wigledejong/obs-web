@@ -96,9 +96,13 @@ let reqOpts = {};
 const statusUrl = `http://${streamerIP}/usapi?method=get-status`;
 const startStream = `http://${streamerIP}/usapi?method=start-live`;
 const stopStream = `http://${streamerIP}/usapi?method=stop-live`;
+const startRecord = `http://${streamerIP}/usapi?method=start-rec`;
+const stopRecord = `http://${streamerIP}/usapi?method=stop-rec`;
 const loginUrl = `http://${streamerIP}/usapi?method=login&id=${userName}&pass=${password}`;
 const screenShotUrl = `http://${streamerIP}/tmp/sbox-snapshot/sbox-quarter.jpg?v=`;
 const streamerUrl = `http://${streamerIP}/`;
+const filesUrl = `http://${streamerIP}/usapi?method=get-media-files&disk-type=1&start=0&count=300`;
+const downloadUrl = `http://${streamerIP}:8080/download`;
 
 let preset = '';
 let uitzending = '';
@@ -106,6 +110,7 @@ let streamStatus = '';
 let liveStatus = '';
 let statusCameras = [];
 let camerasStatus = '';
+let recordOn = false;
 
 let CLIENTS = expressWs.getWss().clients;
 
@@ -334,6 +339,61 @@ async function checkStreamStatus() {
   }
 }
 
+async function checkRecordStatus() {
+  try {
+    let res = await httpUtils.get(statusUrl, reqOpts);
+    logger.info('Streamer response statusCode: ' + res['statusCode']);
+    const data = res.data;
+    logger.info('Streamer response functionalStatus: ' + data['result']);
+    if (data['result'] === -17) {
+      logger.info("Niet meer ingelogd. Opnieuw inloggen");
+      await loginStreamer();
+    }
+    recStatus = JSON.stringify(data['rec-status']);
+    logger.info('Streamer:' + recStatus);
+    recordStatus = ((data['cur-status'] & DeviceStatus.statusRecord) == DeviceStatus.statusRecord)
+    logger.info("Status record:" + recordStatus);
+    return recordStatus;
+  }
+  catch (err) {
+    logger.info('==> streamerstatus error:');
+    logger.error(err);
+    return 'error';
+  }
+}
+
+async function downloadAll() {
+  try {
+    let res = await httpUtils.get(filesUrl, reqOpts);
+    logger.info('Streamer response files statusCode: ' + res['statusCode']);
+    const data = res.data;
+    logger.info('Streamer response files status: ' + data['result']);
+    if (data['result'] === -17) {
+      logger.info("Niet meer ingelogd. Opnieuw inloggen");
+      await loginStreamer();
+    }
+    const path = data['path'];
+    const mediaFiles = data['media-files'];
+    for (let i = 0; i < mediaFiles.length; i++) {
+      const file = mediaFiles[i]['name'];
+      const url = downloadUrl + path+'/'+file;
+      logger.info('Download file: ' + file);
+      logger.info('URL: ' + url);
+      await httpUtils.download(url, file);
+      logger.info("Done: " + file);
+      await new Promise(resolve => setTimeout(resolve, 10000));
+      logger.info('Waited 10s');
+    }
+    logger.info('Downloaden is klaar');
+    return 'ok';
+  }
+  catch (err) {
+    logger.info('==> download error:');
+    logger.error(err);
+    return 'error';
+  }
+}
+
 function loadConfig() {
   appConfig = new SelfReloadJSON('src/config.json');
 }
@@ -373,6 +433,18 @@ app.get('/loginStreamer', async function (request, response) {
     });
 })
 
+app.get('/downloadAll', async function (request, response) {
+  logger.info("Verzoek alle opgeslagen recording te downloaden");
+  await downloadAll()
+    .then(() => {
+      response.send("oke");
+    })
+    .catch((err) => {
+      logger.error(err);
+      response.status(404).end("error");
+    });
+})
+
 app.get('/getCameraStatus', async function (request, response) {
   logger.info("Status cameras wordt opgevraagd.");
   await checkStatusCameras();
@@ -384,9 +456,11 @@ app.get('/getStatus', async function (request, response) {
   try {
     await checkStatusCameras();
     let streamStatus = await checkStreamStatus();
+    let recordStatus = await checkRecordStatus();
     let responseBody = {
       statusCamera: statusCameras,
-      statusStream: streamStatus
+      statusStream: streamStatus,
+      statusRecord: recordStatus
     }
     response.json(responseBody);
   }
@@ -407,12 +481,24 @@ app.get('/streamStatus', async function (request, response) {
   }
 });
 
+app.get('/recordStatus', async function (request, response) {
+  logger.info("Status record wordt opgevraagd");
+  try {
+    let status = await checkRecordStatus();
+    response.send(status);
+  }
+  catch (err) {
+    response.status(404).end("error");
+  }
+});
+
 app.get('/stopStreamen', async function (request, response) {
   logger.info("Verzoek om stream te stoppen");
   let status = await checkStreamStatus();
   if (status) {
     logger.info("Streamen stoppen");
     httpUtils.get(stopStream, reqOpts);
+    httpUtils.get(stopRecord, reqOpts);
     response.send("gestopt");
   } else {
     logger.info("Stream was al gestopt");
@@ -427,11 +513,61 @@ app.get('/startStreamen', async function (request, response) {
   if (!status) {
     logger.info("Streamen starten");
     httpUtils.get(startStream, reqOpts);
+    logger.info("RecordOn: " + recordOn)
+    if (recordOn == "true") {
+      logger.info("Record mag aan staan");
+      httpUtils.get(startRecord, reqOpts);
+    }
     response.send("gestart");
   } else {
     logger.info("Stream was al gestart");
     response.send("gestart");
   }
+});
+
+app.get('/startRecording', async function (request, response) {
+  logger.info("Verzoek om record te starten");
+  let status = await checkRecordStatus();
+  if (!status) {
+    logger.info("Recording starten");
+    logger.info("RecordOn: " + recordOn)
+    if (recordOn == "true") {
+      logger.info("Record mag aan staan");
+      httpUtils.get(startRecord, reqOpts);
+    }
+    response.send("gestart");
+  } else {
+    logger.info("Record was al gestart");
+    response.send("gestart");
+  }
+});
+
+app.get('/stopRecording', async function (request, response) {
+  logger.info("Verzoek om record te stoppen");
+  let status = await checkRecordStatus();
+  if (status) {
+    logger.info("Record stoppen");
+    httpUtils.get(stopRecord, reqOpts);
+    response.send("gestopt");
+  } else {
+    logger.info("Record was al gestopt");
+    response.send("gestopt");
+  }
+});
+
+app.get('/setRecord', async function (request, response) {
+  logger.info("Verzoek om record status te wijzigen");
+  logger.info("RecordOn: " +recordOn);
+  logger.info(JSON.stringify(request.query.value));
+  recordOn = request.query.value;
+  logger.info("RecordOn: " +recordOn);
+  response.send(recordOn);
+});
+
+app.get('/getRecordOn', async function (request, response) {
+  logger.info("Verzoek om record status op te vragen");
+  logger.info("RecordOn: " + recordOn);
+  response.send(recordOn);
 });
 
 app.get('/screenshot.jpg', function (request, response) {

@@ -4,7 +4,7 @@
   import { onMount } from 'svelte';
   import './style.scss';
   import { mdiCameraOff, mdiCamera, mdiMicrophoneOff, mdiMicrophone, mdiAccessPoint, mdiAccessPointOff, mdiHeadphonesOff,
-    mdiAccessPointRemove, mdiHeadphones, mdiPictureInPictureTopRight} from '@mdi/js';
+    mdiAccessPointRemove, mdiHeadphones, mdiPictureInPictureTopRight, mdiRecordRec} from '@mdi/js';
   import Icon from 'mdi-svelte';
 
   import { ATEM } from "./atem.js";
@@ -16,6 +16,7 @@
     await checkSession();
     await getSavedUitzending();
     await getSavedPreset();
+    await getRecordOn();
     await getScreenshot();
     if ('serviceWorker' in navigator) {
       await navigator.serviceWorker.register('/service-worker.js');
@@ -47,12 +48,14 @@
     isAvond,
     isMuted,
     isPipUit,
+    isRecordAan,
     isConnected,
     cameraOn,
     cameraError,
     datum,
     previewClass,
     streaming,
+    recording,
     atemConnected,
     isLoaded = false;
   let isMutedPC = true;
@@ -191,6 +194,28 @@
     }
   }
 
+  async function startRecord(){
+    if (confirm("Weet je zeker dat je de recording wilt starten?") == true) {
+      isLoaded = false;
+      while(!recording) {
+        await fetch('http://'+ appConfig.atemServer +'/startRecording');
+        await recordStatus();
+      }
+      isLoaded = true;
+    }
+  }
+
+  async function stopRecord(){
+    if (confirm("Weet je zeker dat je de recording wilt stoppen?") == true) {
+      isLoaded = false;
+      while(recording) {
+        await fetch('http://' + appConfig.atemServer + '/stopRecording');
+        await recordStatus();
+      }
+      isLoaded = true;
+    }
+  }
+
   async function getStatus(){
    if(isConnected) {
      let cameraOnBool = false;
@@ -206,6 +231,7 @@
             streaming = data.statusStream;
          }
          camerasStatus = data.statusCamera
+         recording = data.statusRecord
       })
       .catch((err) => {
         console.log(err);
@@ -246,10 +272,20 @@
     cameraError = cameraErrorBool;
   }
 
-async function streamStatus() {
-  await fetch('http://'+ appConfig.atemServer +'/streamStatus')
+  async function streamStatus() {
+   await fetch('http://'+ appConfig.atemServer +'/streamStatus')
       .then(res => res.json())
       .then(data => streaming = data)
+      .catch(err => {
+        isConnected = false;
+        loginStreamer();
+      });
+  }
+
+  async function recordStatus() {
+   await fetch('http://'+ appConfig.atemServer +'/recordStatus')
+      .then(res => res.json())
+      .then(data => recording = data)
       .catch(err => {
         isConnected = false;
         loginStreamer();
@@ -293,6 +329,26 @@ async function streamStatus() {
     let preset = presetsConfig[nextPreset];
     if(preset != null){
       let camera = cameras[preset.camera];
+      if(nextPreset == "Collecte"){
+        console.log("collecte");
+        runMacro(5);
+      }
+      if(nextPreset == "Begin dienst"){
+        runMacro(7);
+      }
+      if(nextPreset == "Extra plaatje" || nextPreset == "Pauze"){
+        runMacro(9);
+        await new Promise(r => setTimeout(r, 2000));
+      }
+      if(nextPreset == "Beker & Brood"){
+        runMacro(11);
+        await new Promise(r => setTimeout(r, 2000));
+      }
+      if(nextPreset == "Begin stream"){
+        runMacro(13);
+        await new Promise(r => setTimeout(r, 2000));
+      }
+      
 
       if(nextPreset == "Collecte" || nextPreset == "Begin dienst"){
         changeAtemChannel(camera.atemChannel);
@@ -330,7 +386,7 @@ async function streamStatus() {
     switchers[0].changePreviewInput(atemChannel);
     switchers[0].cutTransition();
   }
-
+        
   async function changeUitzending(e){
     isLoaded = false;
     let newUitzending = e.currentTarget.textContent.trim();
@@ -450,7 +506,21 @@ async function streamStatus() {
         switchers[0].runMacro(4);
           isPipUit = false;
       }
-    }
+  }
+
+  async function toggleRecord() {
+      let data = '';
+      await fetch('http://'+ appConfig.atemServer +'/setRecord?value='+!isRecordAan);
+      isRecordAan=!isRecordAan;
+  }
+
+  async function getRecordOn(){
+    let recordOn = false;
+    await fetch('http://'+ appConfig.atemServer +'/getRecordOn')
+      .then(res => res.text())
+      .then(data => recordOn = data);
+    isRecordAan = (recordOn === 'true');
+  }
 
   function checkAtemState(){
     let audio = switchers[0].getAudio();
@@ -565,7 +635,7 @@ async function streamStatus() {
           <div class="navbar-dropdown">
             <!-- svelte-ignore a11y-missing-attribute -->
             {#each uitzendingVariant as uitzending}
-            <a class="navbar-item" on:click={changeUitzending}>
+            <a class="navbar-item" on:click={changeUitzending} on:keypress={changeUitzending}>
                 <p>{uitzending}</p>
               </a>
             {/each}
@@ -575,7 +645,7 @@ async function streamStatus() {
         <div class="buttons">
           <!-- svelte-ignore a11y-missing-attribute -->
            {#if streaming}
-              <a class="button is-danger" on:click={stopStream}>
+              <a class="button is-danger" on:click={stopStream} on:keypress={stopStream}>
                 <span class="icon">
                   <Icon path={mdiAccessPointOff} />
                 </span>
@@ -584,7 +654,7 @@ async function streamStatus() {
                 </span>
               </a>
             {:else if !isConnected}
-               <a class="button is-dark" on:click={stopStream}>
+               <a class="button is-dark" on:click={stopStream} on:keypress={stopStream}>
                   <span class="icon">
                     <Icon path={mdiAccessPointRemove} />
                   </span>
@@ -593,7 +663,7 @@ async function streamStatus() {
                   </span>
                </a>
             {:else}
-              <a class="button is-primary" on:click={startStream}>
+              <a class="button is-primary" on:click={startStream} on:keypress={startStream}>
                 <span class="icon">
                   <Icon path={mdiAccessPoint} />
                 </span>
@@ -602,6 +672,36 @@ async function streamStatus() {
                 </span>
               </a>
             {/if}
+            {#if isRecordAan}
+              {#if recording}
+                <a class="button is-danger" on:click={stopRecord} on:keypress={stopRecord}>
+                  <span class="icon">
+                    <Icon path={mdiAccessPointOff} />
+                  </span>
+                  <span>
+                    Stop record
+                  </span>
+                </a>
+              {:else if !isConnected}
+                 <a class="button is-dark" on:click={stopRecord} on:keypress={stopRecord}>
+                    <span class="icon">
+                      <Icon path={mdiAccessPointRemove} />
+                    </span>
+                   <span>
+                      Geen connectie
+                    </span>
+                 </a>
+              {:else}
+                <a class="button is-primary" on:click={startRecord} on:keypress={startRecord}>
+                  <span class="icon">
+                    <Icon path={mdiAccessPoint} />
+                  </span>
+                  <span>
+                    Start record
+                  </span>
+                </a>
+              {/if}
+             {/if}
           <!-- svelte-ignore a11y-missing-attribute -->
         </div>
       </div>
@@ -617,15 +717,15 @@ async function streamStatus() {
             <div class="tile is-parent p-1">
               <!-- svelte-ignore a11y-missing-attribute -->
                 {#if savedPreset == preset}
-                  <a on:click={setPreset} class="tile is-child is-primary notification">
+                  <a on:click={setPreset} on:keypress={setPreset} class="tile is-child is-primary notification">
                         <p class="subtitle has-text-centered is-size-7-mobile">{preset}</p>
                   </a>
                 {:else if !isConnected}
-                  <a on:click={setPreset} class="tile is-child is-dark notification">
+                  <a on:click={setPreset} on:keypress={setPreset} class="tile is-child is-dark notification">
                     <p class="subtitle has-text-centered is-size-7-mobile">{preset}</p>
                   </a>
                 {:else}
-                  <a on:click={setPreset} class="tile is-child is-info notification">
+                  <a on:click={setPreset} on:keypress={setPreset} class="tile is-child is-info notification">
                     <p class="subtitle has-text-centered is-size-7-mobile">{preset}</p>
                   </a>
                 {/if}
@@ -643,7 +743,7 @@ async function streamStatus() {
 <nav class="navbar is-info is-fixed-bottom" role="navigation" aria-label="main navigation">
   <div class="navbar-item">
     <!-- svelte-ignore a11y-missing-attribute -->
-    <a class:is-danger={isMutedPC} class:is-primary={!isMutedPC} class="button" on:click={toggleMutePC} title="Toggle Mute PC">
+    <a class:is-danger={isMutedPC} class:is-primary={!isMutedPC} class="button" on:click={toggleMutePC} on:keypress={toggleMutePC} title="Toggle Mute PC">
       <span class="icon">
         {#if isMutedPC}
         <Icon path={mdiHeadphonesOff} />
@@ -652,11 +752,20 @@ async function streamStatus() {
         {/if}
       </span>
     </a>
-  </div>  <div class="navbar-item">
+  </div>
+  <div class="navbar-item">
     <!-- svelte-ignore a11y-missing-attribute -->
-    <a class:is-danger={isPipUit} class:is-primary={!isPipUit} class="button" on:click={togglePip} title="Toggle Mute PC">
+    <a class:is-danger={isPipUit} class:is-primary={!isPipUit} class="button" on:click={togglePip} on:keypress={togglePip} title="Toggle Mute PC">
       <span class="icon">
         <Icon path={mdiPictureInPictureTopRight} />
+      </span>
+    </a>
+  </div>
+  <div class="navbar-item">
+    <!-- svelte-ignore a11y-missing-attribute -->
+    <a class:is-dark={!isRecordAan} class:is-danger={isRecordAan} class="button" disabled={streaming || null} on:click={toggleRecord} on:keypress={toggleRecord} title="Toggle Record Mode">
+      <span class="icon">
+        <Icon path={mdiRecordRec} />
       </span>
     </a>
   </div>
@@ -664,7 +773,7 @@ async function streamStatus() {
   <div class="navbar-start is-justify-content-center is-flex-grow-1">
     <div class="navbar-item">
       <!-- svelte-ignore a11y-missing-attribute -->
-      <a class:is-danger={isMuted} class:is-primary={!isMuted} class="button" on:click={toggleMute} title="Toggle Mute Audio Systeem">
+      <a class:is-danger={isMuted} class:is-primary={!isMuted} class="button" on:click={toggleMute} on:keypress={toggleMute} title="Toggle Mute Audio Systeem">
           <span class="icon">
             {#if isMuted}
               <Icon path={mdiMicrophoneOff} />
@@ -682,8 +791,8 @@ async function streamStatus() {
   {/if} 
   <div class="navbar-item">
     <!-- svelte-ignore a11y-missing-attribute -->
-    <a class:is-danger={!cameraOn} class:is-primary={cameraOn && !cameraError} class:is-warning={cameraError} class="button" on:click={changePowerModeCameras} title="Toggle Camera">
-        <span class="icon">
+    <a class:is-danger={!cameraOn} class:is-primary={cameraOn && !cameraError} class:is-warning={cameraError} class="button" on:click={changePowerModeCameras} on:keypress={changePowerModeCameras} title="Toggle Camera">
+      <span class="icon">
           {#if cameraOn}
             <Icon path={mdiCamera} />
           {:else}
