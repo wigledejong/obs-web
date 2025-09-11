@@ -2,7 +2,8 @@ const express     = require('express');
 const ATEM        = require('applest-atem');
 const atemConfig = require('./atemConfig.json');
 // Load config from SQLite DB instead of file
-const { initDb, readConfig, writeConfig, migrateFromFileIfEmpty } = require('./db');
+const { initDb } = require('./db');
+const { initSchema, migrateJsonToNormalized, buildJsonFromNormalized } = require('./db_normalized');
 const SelfReloadJSON = require('self-reload-json');
 const cors = require('cors');
 const http = require('http');
@@ -56,8 +57,19 @@ var expressWs = require('express-ws')(app);
 const wsServer = expressWs.getWss();
 
 const db = initDb();
-migrateFromFileIfEmpty(db, logger);
-let appConfig = readConfig(db);
+initSchema(db);
+// On first boot, try to migrate legacy JSON into normalized tables
+try {
+  const fs = require('fs');
+  const path = require('path');
+  const legacyPath = path.join(__dirname, 'config.json');
+  if (fs.existsSync(legacyPath)) {
+    const raw = fs.readFileSync(legacyPath, 'utf8');
+    const json = JSON.parse(raw);
+    migrateJsonToNormalized(db, json);
+  }
+} catch(e) { logger.warn('Legacy migration skipped: ' + e.message); }
+let appConfig = buildJsonFromNormalized(db);
 logger.info('Config loaded:'+JSON.stringify(appConfig.cameras));
 var cameras = appConfig.cameras;
 
@@ -411,7 +423,7 @@ async function downloadAll() {
 }
 
 function loadConfig() {
-  appConfig = readConfig(db);
+  appConfig = buildJsonFromNormalized(db);
 }
 
 app.use(cors());
@@ -432,8 +444,8 @@ app.put('/config', function(request, response){
     if (!body || typeof body !== 'object') {
       return response.status(400).json({ error: 'Invalid config body' });
     }
-    writeConfig(db, body);
-    appConfig = body;
+    migrateJsonToNormalized(db, body);
+    appConfig = buildJsonFromNormalized(db);
     cameras = appConfig.cameras;
     response.json({ ok: true });
   } catch (e) {
