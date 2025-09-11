@@ -407,11 +407,11 @@
       }
 
       function renderVariants() {
-        // select options
-        const variants = state.uitzendingVariant || [];
+        // select options - sorted alphabetically
+        const variants = (state.uitzendingVariant || []).sort();
         variantSelect.innerHTML = variants.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('');
-        // available presets dropdown
-        const presetNames = Object.keys(state.presets || {});
+        // available presets dropdown - sorted alphabetically
+        const presetNames = Object.keys(state.presets || {}).sort();
         availablePresets.innerHTML = presetNames.map(n => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join('');
         renderVariantPresets();
       }
