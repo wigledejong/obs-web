@@ -122,6 +122,8 @@ function upsertProfiles(db, cfg) {
 function migrateJsonToNormalized(db, cfg) {
   const tx = db.transaction(() => {
     initSchema(db);
+    // Ensure no FK violations: clear variant_preset before modifying variants
+    db.prepare('DELETE FROM variant_preset').run();
     upsertSettings(db, cfg);
     upsertCameras(db, cfg.cameras);
     upsertPresets(db, cfg.presets);

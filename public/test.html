@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OBS Web - Test Setup</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .status.success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .status.error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .status.info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background-color: #0056b3; }
+        button:disabled { background-color: #6c757d; cursor: not-allowed; }
+        .links {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .links a {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #28a745;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+        }
+        .links a:hover { background-color: #218838; }
+        pre {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>OBS Web - Test Setup</h1>
+    
+    <div class="container">
+        <h2>Server Status</h2>
+        <div id="serverStatus" class="status info">Checking server...</div>
+        <div id="mockStatus" class="status info">🧪 Mock Mode: ATEM and Streamer are mocked for testing</div>
+        <button onclick="checkServer()">Refresh Status</button>
+    </div>
+
+    <div class="container">
+        <h2>Quick Links</h2>
+        <div class="links">
+            <a href="http://localhost:8081" target="_blank">Main App (Svelte)</a>
+            <a href="http://localhost:8081/admin.html" target="_blank">Admin Panel</a>
+            <a href="http://localhost:8081/config" target="_blank">Config API (JSON)</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>Test Commands</h2>
+        <p>You can test the API endpoints directly:</p>
+        <pre>
+# Get current config
+curl http://localhost:8081/config
+
+# Update config (example)
+curl -X PUT -H "Content-Type: application/json" \
+  -d '{"atemServer":"172.16.110.27:8081","connectToAtem":true}' \
+  http://localhost:8081/config
+        </pre>
+    </div>
+
+    <div class="container">
+        <h2>Server Logs</h2>
+        <div id="logs" style="background-color: #f8f9fa; padding: 10px; border-radius: 4px; font-family: monospace; max-height: 200px; overflow-y: auto;">
+            <div>Server should be running on http://0.0.0.0:8081</div>
+            <div>Check terminal for detailed logs</div>
+        </div>
+    </div>
+
+    <script>
+        async function checkServer() {
+            const statusDiv = document.getElementById('serverStatus');
+            statusDiv.textContent = 'Checking server...';
+            statusDiv.className = 'status info';
+            
+            try {
+                const response = await fetch('http://localhost:8081/config');
+                if (response.ok) {
+                    const config = await response.json();
+                    statusDiv.innerHTML = `✅ Server is running!<br>
+                        <strong>Config loaded:</strong> ${Object.keys(config.cameras || {}).length} cameras, 
+                        ATEM: ${config.connectToAtem ? 'Connected' : 'Disconnected'}`;
+                    statusDiv.className = 'status success';
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            } catch (error) {
+                statusDiv.innerHTML = `❌ Server not responding: ${error.message}<br>
+                    <small>Make sure the server is running with: <code>node src/server.js --test</code></small>`;
+                statusDiv.className = 'status error';
+            }
+        }
+
+        // Check server on page load
+        checkServer();
+        
+        // Auto-refresh every 10 seconds
+        setInterval(checkServer, 10000);
+    </script>
+</body>
+</html>

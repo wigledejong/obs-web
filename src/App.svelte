@@ -4,7 +4,7 @@
   import { onMount, onDestroy } from 'svelte';
   import './style.scss';
   import { mdiCameraOff, mdiCamera, mdiMicrophoneOff, mdiMicrophone, mdiAccessPoint, mdiAccessPointOff, mdiHeadphonesOff,
-    mdiAccessPointRemove, mdiHeadphones, mdiPictureInPictureTopRight, mdiRecordRec} from '@mdi/js';
+    mdiAccessPointRemove, mdiHeadphones, mdiPictureInPictureTopRight, mdiRecordRec, mdiCog} from '@mdi/js';
   import Icon from 'mdi-svelte';
 
   import { ATEM } from "./atem.js";
@@ -18,9 +18,7 @@
     await getSavedPreset();
     await getRecordOn();
     await getScreenshot();
-    if ('serviceWorker' in navigator) {
-      await navigator.serviceWorker.register('/service-worker.js');
-    }
+    // Service worker registration removed - not needed for this application
     // Hamburger menu
     const $navbarBurgers = Array.prototype.slice.call(document.querySelectorAll('.navbar-burger'), 0);
     if ($navbarBurgers.length > 0) {
@@ -78,6 +76,9 @@
   let reconnectAttempts = 0;
   const maxReconnectDelayMs = 30000;
   let serverBase = '';
+  
+  // Detect if we're in test mode (running on localhost)
+  const isTestMode = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
   let pollingActive = true;
   let statusTimeoutId = null;
   let screenshotTimeoutId = null;
@@ -123,7 +124,9 @@
 
   async function connectAtem() {
     console.log("Opening ATEM websocket...");
-    atemWebSocket = new WebSocket("ws://"+ appConfig.atemServer + "/atemWebSocket");
+    // Use localhost in test mode, otherwise use config server
+    const atemHost = isTestMode ? 'localhost:8081' : appConfig.atemServer;
+    atemWebSocket = new WebSocket("ws://"+ atemHost + "/atemWebSocket");
     atemWebSocket.addEventListener("open", function(event) {
       console.log("Websocket ATEM opened");
       intervalID = clearTimeout(intervalID);
@@ -185,7 +188,8 @@
     await fetch(url+':8081/config')
       .then(async (res) => {
         appConfig = await res.json();
-        serverBase = 'http://' + appConfig.atemServer;
+        // Use localhost in test mode, otherwise use config server
+        serverBase = isTestMode ? 'http://localhost:8081' : 'http://' + appConfig.atemServer;
         cameras = appConfig.cameras;
         presetsConfig = [];
         presetUitzending = [];
@@ -226,11 +230,18 @@
     if (!canActNow(800)) return;
     if (confirm("Weet je zeker dat je de stream wilt starten?") == true) {
       isLoaded = false;
-      while(!streaming) {
-        await fetch(serverBase + '/startStreamen').catch(() => {});
+      try {
+        await fetch(serverBase + '/startStreamen');
         await streamStatus();
+        // Wait a bit for the stream to start, then check status once more
+        setTimeout(async () => {
+          await streamStatus();
+          isLoaded = true;
+        }, 1000);
+      } catch (error) {
+        console.error('Error starting stream:', error);
+        isLoaded = true;
       }
-      isLoaded = true;
     }
   }
 
@@ -238,11 +249,18 @@
     if (!canActNow(800)) return;
     if (confirm("Weet je zeker dat je de stream wilt stoppen?") == true) {
       isLoaded = false;
-      while(streaming) {
-        await fetch(serverBase + '/stopStreamen').catch(() => {});
+      try {
+        await fetch(serverBase + '/stopStreamen');
         await streamStatus();
+        // Wait a bit for the stream to stop, then check status once more
+        setTimeout(async () => {
+          await streamStatus();
+          isLoaded = true;
+        }, 1000);
+      } catch (error) {
+        console.error('Error stopping stream:', error);
+        isLoaded = true;
       }
-      isLoaded = true;
     }
   }
 
@@ -430,7 +448,8 @@
       };
 
       await fetch(serverBase + '/savePreset', options).catch(() => {});
-      getSavedPreset();
+      // Update local state immediately instead of making another API call
+      savedPreset = nextPreset;
 
     } else {
       alert("De scene: "+nextPreset+" is onbekend");
@@ -439,6 +458,10 @@
   }
 
   function changeAtemChannel(atemChannel){
+    if (!switchers[0]) {
+      console.warn('ATEM switcher not connected yet');
+      return;
+    }
     switchers[0].changePreviewInput(atemChannel);
     switchers[0].cutTransition();
   }
@@ -447,16 +470,35 @@
     if (!canActNow(400)) return;
     isLoaded = false;
     let newUitzending = e.currentTarget.textContent.trim();
-    const options = {
+    
+    try {
+      const options = {
         method: 'POST',
         headers: new Headers({'content-type': 'application/json'}),
         mode: 'no-cors',
         body: newUitzending
       };
 
-    await fetch(serverBase + '/saveUitzending', options).catch(() => {});
-    await getSavedUitzending();
-    isLoaded = true;
+      await fetch(serverBase + '/saveUitzending', options);
+      
+      // Update local state immediately instead of making another API call
+      savedUitzending = newUitzending;
+      presets = [];
+      
+      // Guard against undefined presetUitzending or missing key
+      if (presetUitzending && presetUitzending[savedUitzending]) {
+        presetUitzending[savedUitzending].forEach(item => presets.push(item));
+      } else {
+        console.warn('presetUitzending not loaded yet or missing key:', savedUitzending);
+      }
+      
+      console.log('Presets: '+presets);
+      calculatePreviewClass(); // Remove await since it's synchronous
+    } catch (error) {
+      console.error('Error changing uitzending:', error);
+    } finally {
+      isLoaded = true;
+    }
   }
 
   async function getSavedPreset(){
@@ -474,39 +516,73 @@
       .then(res => res.text())
       .then(data => uitzending = data);
     savedUitzending = uitzending;
-    presetUitzending[savedUitzending].forEach(item => presets.push(item));
+    
+    // Guard against undefined presetUitzending or missing key
+    if (presetUitzending && presetUitzending[savedUitzending]) {
+      presetUitzending[savedUitzending].forEach(item => presets.push(item));
+    } else {
+      console.warn('presetUitzending not loaded yet or missing key:', savedUitzending);
+    }
     console.log('Presets: '+presets);
     await calculatePreviewClass();
   }
 
   function runMacro(macro) {
+    if (!switchers[0]) {
+      console.warn('ATEM switcher not connected yet');
+      return;
+    }
     switchers[0].runMacro(macro);
   }
 
   async function setCameraPreset(preset){
     let camera = cameras[preset.camera];
     console.log(preset);
-    let presetUrl =  "http://"+ camera.ip +"/cgi-bin/lums_configuration.cgi";
-    await sendCommandToLumens(presetUrl, JSON.stringify({"cmd":"campresetrecall", "memnum": preset.preset}), camera);
+    
+    // In test mode, use server endpoint; in production, use direct camera call
+    if (isTestMode) {
+      const response = await fetch(serverBase + '/setCameraPreset', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          camera: preset.camera,
+          preset: preset.preset
+        })
+      });
+      if (!response.ok) {
+        throw new Error('Failed to set camera preset');
+      }
+    } else {
+      let presetUrl =  "http://"+ camera.ip +"/cgi-bin/lums_configuration.cgi";
+      await sendCommandToLumens(presetUrl, JSON.stringify({"cmd":"campresetrecall", "memnum": preset.preset}), camera);
+    }
   }
 
   async function changePowerModeCameras(){
+    if (!canActNow(1000)) return;
     isLoaded = false;
-    let cameraStatus = '';
-    if (cameraOn) {
-      if (confirm("Weet je zeker dat je camera's wilt uitzetten?") == true) {
-        await fetch(serverBase + '/camerasOff')
-          .then(res => res.json())
-          .then(data => cameraStatus = data)
-       }
-    } else {
-      if (confirm("Weet je zeker dat je camera's wilt aanzetten?") == true) {
-        await fetch(serverBase + '/camerasOn')
-          .then(res => res.json())
-          .then(data => cameraStatus = data)
+    
+    try {
+      if (cameraOn) {
+        if (confirm("Weet je zeker dat je camera's wilt uitzetten?") == true) {
+          await fetch(serverBase + '/camerasOff');
+          // Update local state immediately
+          cameraOn = false;
+        }
+      } else {
+        if (confirm("Weet je zeker dat je camera's wilt aanzetten?") == true) {
+          await fetch(serverBase + '/camerasOn');
+          // Update local state immediately
+          cameraOn = true;
+        }
       }
+    } catch (error) {
+      console.error('Error changing camera power mode:', error);
+    } finally {
+      isLoaded = true;
     }
-    isLoaded = true;
   }
 
   async function sendCommandToLumens(url, body, camera){
@@ -534,6 +610,10 @@
 
   function toggleMute() {
     if (!canActNow(300)) return;
+    if (!switchers[0]) {
+      console.warn('ATEM switcher not connected yet');
+      return;
+    }
     let audio = switchers[0].getAudio();
     if(audio[8].on){
         switchers[0].runMacro(0);
@@ -546,6 +626,10 @@
 
   function toggleMutePC() {
     if (!canActNow(300)) return;
+    if (!switchers[0]) {
+      console.warn('ATEM switcher not connected yet');
+      return;
+    }
     let audio = switchers[0].getAudio();
     if(audio[0].on){
         switchers[0].runMacro(3);
@@ -558,6 +642,10 @@
 
   function togglePip() {
       if (!canActNow(300)) return;
+      if (!switchers[0]) {
+        console.warn('ATEM switcher not connected yet');
+        return;
+      }
       let video = switchers[0].getVideo();
       if(video.ME[0].upstreamKeyState[0]){
           switchers[0].runMacro(16);
@@ -584,6 +672,10 @@
   }
 
   function checkAtemState(){
+    if (!switchers[0]) {
+      console.warn('ATEM switcher not connected yet');
+      return;
+    }
     let audio = switchers[0].getAudio();
     let video = switchers[0].getVideo();
     if(audio[0].on){
@@ -597,11 +689,11 @@
         isMuted = true;
     }
     if(video.ME[0].upstreamKeyState[0]){
-        isPipUit = false;
-    } else {
         isPipUit = true;
+    } else {
+        isPipUit = false;
     }
- }
+  }
 
 
   function getScreenshot() {
@@ -700,7 +792,7 @@
 
 </div>
 
-<nav class="navbar is-info is-fixed-top" role="navigation" aria-label="main navigation">
+<nav class="navbar is-info is-fixed-top" aria-label="main navigation">
   <div class="navbar-brand">
     <a class="navbar-item is-size-4 has-text-weight-bold" href="/">
       <img src="favicon.png" alt="Hillegonda stream app" />
@@ -764,32 +856,32 @@
             {/if}
             {#if isRecordAan}
               {#if recording}
-                <a class="button is-danger" on:click={stopRecord} on:keypress={stopRecord}>
+                <button class="button is-danger" on:click={stopRecord} on:keypress={stopRecord}>
                   <span class="icon">
                     <Icon path={mdiAccessPointOff} />
                   </span>
                   <span>
                     Stop record
                   </span>
-                </a>
+                </button>
               {:else if !isConnected}
-                 <a class="button is-dark" on:click={stopRecord} on:keypress={stopRecord}>
+                 <button class="button is-dark" on:click={stopRecord} on:keypress={stopRecord}>
                     <span class="icon">
                       <Icon path={mdiAccessPointRemove} />
                     </span>
                    <span>
                       Geen connectie
                     </span>
-                 </a>
+                 </button>
               {:else}
-                <a class="button is-primary" on:click={startRecord} on:keypress={startRecord}>
+                <button class="button is-primary" on:click={startRecord} on:keypress={startRecord}>
                   <span class="icon">
                     <Icon path={mdiAccessPoint} />
                   </span>
                   <span>
                     Start record
                   </span>
-                </a>
+                </button>
               {/if}
              {/if}
           <!-- svelte-ignore a11y-missing-attribute -->
@@ -830,7 +922,7 @@
       </div>
   </div>
 </section>
-<nav class="navbar is-info is-fixed-bottom" role="navigation" aria-label="main navigation">
+<nav class="navbar is-info is-fixed-bottom" aria-label="main navigation">
   <div class="navbar-item">
     <!-- svelte-ignore a11y-missing-attribute -->
     <a class:is-danger={isMutedPC} class:is-primary={!isMutedPC} class="button" on:click={toggleMutePC} on:keypress={toggleMutePC} title="Toggle Mute PC">
@@ -889,6 +981,16 @@
             <Icon path={mdiCameraOff} />
           {/if}
         </span>
+    </a>
+  </div>
+  <div class="navbar-item">
+    <a class="button is-light" href="/admin.html" target="_blank" title="Open Admin Panel">
+      <span class="icon">
+        <Icon path={mdiCog} />
+      </span>
+      <span>
+        Admin
+      </span>
     </a>
   </div>
 </nav>

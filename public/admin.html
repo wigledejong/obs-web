@@ -157,7 +157,10 @@
         setTimeout(() => { statusEl.textContent = ''; }, 2000);
       }
 
-      function baseUrl() { return location.origin.replace(/:\\d+$/, '') + ':8081'; }
+      function baseUrl() {
+        // Build http://<host>:8081 regardless of current dev port
+        return location.protocol + '//' + location.hostname + ':8081';
+      }
 
       async function loadConfig() {
         setStatus('Loading...', true);

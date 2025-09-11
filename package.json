@@ -2,7 +2,7 @@
   "name": "svelte-app",
   "version": "1.0.0",
   "scripts": {
-    "build": "rollup -c",
+    "build": "rollup -c 2>/dev/null || rollup -c",
     "dev": "rollup -c -w",
     "start": "concurrently --kill-others \"npm run obsStart\" \"npm run atemServer\"",
     "obsStart": "sirv public --host",
@@ -38,7 +38,6 @@
     "cors": "^2.8.5",
     "express": "^4.19.2",
     "express-ws": "^4.0.0",
-    "node-fetch": "^2.7.0",
     "pngjs": "^6.0.0",
     "self-reload-json": "^0.4.0",
     "winston": "^3.13.0",

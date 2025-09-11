@@ -1,6 +1,7 @@
 {
   "server": {
     "host": "172.16.110.27",
+    "testHost": "0.0.0.0",
     "port": 8081
   },
   "switchers": [

@@ -1,7 +1,7 @@
 import svelte from 'rollup-plugin-svelte';
 import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
-import livereload from 'rollup-plugin-livereload';
+// import livereload from 'rollup-plugin-livereload'; // Disabled - not needed for static serving
 import { terser } from 'rollup-plugin-terser';
 import postcss from 'rollup-plugin-postcss';
 import purgecss from '@fullhuman/postcss-purgecss';
@@ -28,7 +28,16 @@ export default {
       },
     }),
 
-    postcss({ extract: true, plugins: (production ? [purgecss({ content: ["./src/**/*.svelte", "./rollup.config.js"] })] : []), minimize: production }),
+    postcss({ 
+      extract: true, 
+      plugins: (production ? [purgecss({ content: ["./src/**/*.svelte", "./rollup.config.js"] })] : []), 
+      minimize: production,
+      sassOptions: {
+        quietDeps: true,
+        silenceDeprecations: ['legacy-js-api', 'import', 'global-builtin', 'color-functions'],
+        verbose: false
+      }
+    }),
 
     resolve({
       browser: true,
@@ -58,7 +67,7 @@ export default {
 	<meta charset='utf-8'>
 	<meta name='viewport' content='width=device-width,initial-scale=1'>
 	<meta http-equiv='origin-trial' content='ArcEc1taNHMu4hv4uJ0EqaaarH4y4amJM0PAuYQbWz8jQ7PKsDlfqI60XiQEtUGC6rPyIX0a/w9bErcnW28RDgsAAABReyJvcmlnaW4iOiJodHRwczovL29icy13ZWIubmllay50djo0NDMiLCJmZWF0dXJlIjoiV2FrZUxvY2siLCJleHBpcnkiOjE1OTQxNjYzOTl9'>
-	<meta name='apple-mobile-web-app-capable' content='yes'>
+	<meta name='mobile-web-app-capable' content='yes'>
 
 	<title>Hillegondakerk Stream App</title>
 
@@ -79,7 +88,8 @@ export default {
       }
     }),
     !production && serve(),
-    !production && livereload('public'),
+    // livereload disabled since we serve static files directly
+    // !production && livereload('public'),
     production && terser()
   ],
   watch: {
