@@ -27,6 +27,14 @@
       .tab.active { color: #333; border-bottom-color: #007bff; }
       .tab-content { display: none; }
       .tab-content.active { display: block; }
+      
+      /* Sortable table styles */
+      .sortable { cursor: pointer; user-select: none; position: relative; }
+      .sortable:hover { background: #f0f0f0; }
+      .sort-indicator { font-size: 12px; margin-left: 4px; color: #999; }
+      .sort-indicator.asc::after { content: "↑"; color: #007bff; }
+      .sort-indicator.desc::after { content: "↓"; color: #007bff; }
+      .sort-indicator.asc::before, .sort-indicator.desc::before { content: ""; }
     </style>
   </head>
   <body>
@@ -82,9 +90,22 @@
         <div class="row">
           <button id="addPreset">Add preset</button>
         </div>
-        <table>
+        <div class="row">
+          <label>Filter by Camera: 
+            <select id="presetCameraFilter">
+              <option value="">All cameras</option>
+            </select>
+          </label>
+          <button id="clearPresetFilter">Clear Filter</button>
+        </div>
+        <table id="presetsTable">
           <thead>
-            <tr><th>Name</th><th>Camera Key</th><th>Preset #</th><th></th></tr>
+            <tr>
+              <th class="sortable" data-column="name">Name <span class="sort-indicator">↕</span></th>
+              <th class="sortable" data-column="camera">Camera Key <span class="sort-indicator">↕</span></th>
+              <th class="sortable" data-column="preset">Preset # <span class="sort-indicator">↕</span></th>
+              <th>Actions</th>
+            </tr>
           </thead>
           <tbody id="presetRows"></tbody>
         </table>
@@ -152,6 +173,9 @@
       const addCameraBtn = document.getElementById('addCamera');
       const presetRows = document.getElementById('presetRows');
       const addPresetBtn = document.getElementById('addPreset');
+      const presetCameraFilter = document.getElementById('presetCameraFilter');
+      const clearPresetFilter = document.getElementById('clearPresetFilter');
+      const presetsTable = document.getElementById('presetsTable');
       const variantSelect = document.getElementById('variantSelect');
       const newVariantName = document.getElementById('newVariantName');
       const addVariantBtn = document.getElementById('addVariant');
@@ -200,6 +224,11 @@
 
       // Initialize tabs when page loads
       initTabs();
+
+      // Preset filtering and sorting state
+      let presetFilter = '';
+      let presetSortColumn = '';
+      let presetSortDirection = 'asc';
 
       let state = null;
 
@@ -255,9 +284,8 @@
         Object.keys(cameras).forEach(key => addCameraRow(key, cameras[key]));
 
         // presets
-        presetRows.innerHTML = '';
-        const presets = state.presets || {};
-        Object.keys(presets).forEach(name => addPresetRow(name, presets[name]));
+        populateCameraFilter();
+        renderPresets();
 
         // variants
         renderVariants();
@@ -458,9 +486,104 @@
       function escapeHtml(s) { return (s||'').replace(/[&<>"]+/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
       function cssEscape(s) { return s.replace(/[^a-zA-Z0-9_-]/g, '_'); }
 
+      // Preset filtering and sorting functions
+      function filterAndSortPresets(presets) {
+        let filtered = Object.keys(presets).map(name => ({ name, ...presets[name] }));
+        
+        // Apply filter
+        if (presetFilter) {
+          filtered = filtered.filter(p => p.camera === presetFilter);
+        }
+        
+        // Apply sorting
+        if (presetSortColumn) {
+          filtered.sort((a, b) => {
+            let aVal = a[presetSortColumn] || '';
+            let bVal = b[presetSortColumn] || '';
+            
+            // Convert to numbers for preset column
+            if (presetSortColumn === 'preset') {
+              aVal = parseInt(aVal) || 0;
+              bVal = parseInt(bVal) || 0;
+            }
+            
+            if (presetSortDirection === 'asc') {
+              return aVal > bVal ? 1 : aVal < bVal ? -1 : 0;
+            } else {
+              return aVal < bVal ? 1 : aVal > bVal ? -1 : 0;
+            }
+          });
+        }
+        
+        return filtered;
+      }
+
+      function updateSortIndicators() {
+        const indicators = document.querySelectorAll('.sort-indicator');
+        indicators.forEach(indicator => {
+          indicator.className = 'sort-indicator';
+        });
+        
+        if (presetSortColumn) {
+          const activeIndicator = document.querySelector(`[data-column="${presetSortColumn}"] .sort-indicator`);
+          if (activeIndicator) {
+            activeIndicator.classList.add(presetSortDirection);
+          }
+        }
+      }
+
+      function sortPresets(column) {
+        if (presetSortColumn === column) {
+          presetSortDirection = presetSortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+          presetSortColumn = column;
+          presetSortDirection = 'asc';
+        }
+        updateSortIndicators();
+        renderPresets();
+      }
+
+      function filterPresets() {
+        presetFilter = presetCameraFilter.value;
+        renderPresets();
+      }
+
+      function clearPresetFilters() {
+        presetFilter = '';
+        presetCameraFilter.value = '';
+        renderPresets();
+      }
+
+      function renderPresets() {
+        presetRows.innerHTML = '';
+        const presets = state.presets || {};
+        const filteredPresets = filterAndSortPresets(presets);
+        filteredPresets.forEach(preset => addPresetRow(preset.name, preset));
+      }
+
+      function populateCameraFilter() {
+        const cameras = state.cameras || {};
+        const cameraKeys = Object.keys(cameras);
+        presetCameraFilter.innerHTML = '<option value="">All cameras</option>' + 
+          cameraKeys.map(key => `<option value="${escapeHtml(key)}">${escapeHtml(key)}</option>`).join('');
+      }
+
       loadBtn.addEventListener('click', loadConfig);
       saveBtn.addEventListener('click', saveConfig);
       variantSelect.addEventListener('change', renderVariantPresets);
+      
+      // Preset filtering and sorting event listeners
+      presetCameraFilter.addEventListener('change', filterPresets);
+      clearPresetFilter.addEventListener('click', clearPresetFilters);
+      
+      // Add click listeners to sortable column headers
+      document.querySelectorAll('.sortable').forEach(header => {
+        header.addEventListener('click', () => {
+          const column = header.getAttribute('data-column');
+          sortPresets(column);
+        });
+      });
+      
       loadConfig();
     </script>
   </body>
