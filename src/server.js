@@ -26,7 +26,6 @@ const winston = require('winston');
 
 const DailyRotateFile = require('winston-daily-rotate-file');
 const { json } = require('express');
-const { ZLIB_VERSION } = require('zlib-sync');
 
 var transport = new DailyRotateFile({
   filename: 'server-%DATE%.log',
