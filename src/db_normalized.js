@@ -134,6 +134,39 @@ function migrateJsonToNormalized(db, cfg) {
   tx();
 }
 
+function isDatabaseEmpty(db) {
+  try {
+    // Check if any normalized tables have meaningful data
+    const camerasCount = db.prepare('SELECT COUNT(*) as count FROM camera').get().count;
+    const presetsCount = db.prepare('SELECT COUNT(*) as count FROM preset').get().count;
+    const variantsCount = db.prepare('SELECT COUNT(*) as count FROM uitzending_variant').get().count;
+    
+    // Check if settings table has meaningful data (not just the default empty record)
+    const settingsRecord = db.prepare('SELECT * FROM settings WHERE id = 1').get();
+    const hasSettingsData = settingsRecord && (settingsRecord.atem_server || settingsRecord.connect_to_atem || settingsRecord.connect_to_lumens);
+    
+    // Also check if the old config table has meaningful data (not just empty JSON)
+    let hasLegacyData = false;
+    try {
+      const legacyConfig = db.prepare('SELECT json FROM config WHERE id = 1').get();
+      if (legacyConfig && legacyConfig.json) {
+        const parsed = JSON.parse(legacyConfig.json);
+        hasLegacyData = Object.keys(parsed).length > 0;
+      }
+    } catch (e) {
+      // Old config table doesn't exist, that's fine
+    }
+    
+    const isEmpty = camerasCount === 0 && presetsCount === 0 && variantsCount === 0 && !hasSettingsData && !hasLegacyData;
+    
+    // Database is considered empty if all normalized tables are empty AND no meaningful legacy data
+    return isEmpty;
+  } catch (error) {
+    // If there's an error (tables don't exist), consider it empty
+    return true;
+  }
+}
+
 function buildJsonFromNormalized(db) {
   const settings = db.prepare('SELECT * FROM settings WHERE id=1').get();
   const cameras = db.prepare('SELECT * FROM camera').all();
@@ -193,6 +226,7 @@ module.exports = {
   initSchema,
   migrateJsonToNormalized,
   buildJsonFromNormalized,
+  isDatabaseEmpty,
 };
 
 

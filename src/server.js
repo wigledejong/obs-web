@@ -2,7 +2,7 @@ const express     = require('express');
 const atemConfig = require('./atemConfig.json');
 // Load config from SQLite DB instead of file
 const { initDb } = require('./db');
-const { initSchema, migrateJsonToNormalized, buildJsonFromNormalized } = require('./db_normalized');
+const { getDb, initSchema, migrateJsonToNormalized, buildJsonFromNormalized, isDatabaseEmpty } = require('./db_normalized');
 const SelfReloadJSON = require('self-reload-json');
 const cors = require('cors');
 const http = require('http');
@@ -75,19 +75,34 @@ const app = express();
 var expressWs = require('express-ws')(app);
 const wsServer = expressWs.getWss();
 
-const db = initDb();
+// Initialize database with normalized schema only
+const db = getDb();
 initSchema(db);
-// On first boot, try to migrate legacy JSON into normalized tables
-try {
-  const fs = require('fs');
-  const path = require('path');
-  const legacyPath = path.join(__dirname, 'config.json');
-  if (fs.existsSync(legacyPath)) {
-    const raw = fs.readFileSync(legacyPath, 'utf8');
-    const json = JSON.parse(raw);
-    migrateJsonToNormalized(db, json);
+
+// Only migrate from config.json if database is empty
+const isEmpty = isDatabaseEmpty(db);
+logger.info(`Database empty check result: ${isEmpty}`);
+
+if (isEmpty) {
+  try {
+    const fs = require('fs');
+    const path = require('path');
+    const legacyPath = path.join(__dirname, 'config.json');
+    if (fs.existsSync(legacyPath)) {
+      logger.info('Database is empty, migrating from config.json...');
+      const raw = fs.readFileSync(legacyPath, 'utf8');
+      const json = JSON.parse(raw);
+      migrateJsonToNormalized(db, json);
+      logger.info('Migration completed successfully');
+    } else {
+      logger.warn('Database is empty but no config.json found, using default values');
+    }
+  } catch(e) { 
+    logger.warn('Legacy migration skipped: ' + e.message); 
   }
-} catch(e) { logger.warn('Legacy migration skipped: ' + e.message); }
+} else {
+  logger.info('Database contains data, skipping migration from config.json');
+}
 let appConfig = buildJsonFromNormalized(db);
 logger.info('Config loaded:'+JSON.stringify(appConfig.cameras));
 var cameras = appConfig.cameras;
