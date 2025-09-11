@@ -7,10 +7,18 @@
     <link rel="icon" href="/favicon.png" />
     <style>
       body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial, sans-serif; margin: 16px; }
-      .row { display: flex; gap: 12px; align-items: center; }
-      textarea { width: 100%; height: 60vh; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 13px; }
+      .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
       button { padding: 8px 12px; }
+      input[type="text"], input[type="number"] { padding: 6px 8px; }
+      fieldset { margin: 16px 0; }
+      legend { font-weight: 600; }
+      table { border-collapse: collapse; width: 100%; }
+      th, td { border: 1px solid #ddd; padding: 6px 8px; }
+      th { text-align: left; background: #f8f8f8; }
       .status { margin-left: 8px; font-size: 13px; }
+      .muted { color: #555; font-size: 12px; }
+      .col { display: flex; gap: 16px; }
+      .box { border: 1px solid #eee; padding: 12px; border-radius: 6px; }
     </style>
   </head>
   <body>
@@ -20,14 +28,128 @@
       <button id="save">Save</button>
       <span id="status" class="status"></span>
     </div>
-    <p>Edit the JSON config below and click Save.</p>
-    <textarea id="editor"></textarea>
+
+    <fieldset class="box">
+      <legend>Settings</legend>
+      <div class="row">
+        <label>Atem Server: <input id="atemServer" type="text" placeholder="host:port" /></label>
+        <label><input id="connectToAtem" type="checkbox" /> connectToAtem</label>
+        <label><input id="connectToLumens" type="checkbox" /> connectToLumens</label>
+      </div>
+    </fieldset>
+
+    <fieldset class="box">
+      <legend>Cameras</legend>
+      <div class="row">
+        <button id="addCamera">Add camera</button>
+        <span class="muted">Each row uses a camera key (e.g. camera1)</span>
+      </div>
+      <table>
+        <thead>
+          <tr><th>Key</th><th>Naam</th><th>IP</th><th>User</th><th>Password</th><th>Atem Channel</th><th>PTZ</th><th></th></tr>
+        </thead>
+        <tbody id="cameraRows"></tbody>
+      </table>
+    </fieldset>
+
+    <div class="col">
+      <fieldset class="box" style="flex:1">
+        <legend>Presets</legend>
+        <div class="row">
+          <button id="addPreset">Add preset</button>
+        </div>
+        <table>
+          <thead>
+            <tr><th>Name</th><th>Camera Key</th><th>Preset #</th><th></th></tr>
+          </thead>
+          <tbody id="presetRows"></tbody>
+        </table>
+      </fieldset>
+      <fieldset class="box" style="flex:1">
+        <legend>Uitzending Variants</legend>
+        <div class="row">
+          <input id="newVariantName" type="text" placeholder="Variant name" />
+          <button id="addVariant">Add variant</button>
+        </div>
+        <div class="row">
+          <select id="variantSelect"></select>
+          <button id="removeVariant">Remove</button>
+        </div>
+        <div class="row">
+          <select id="availablePresets"></select>
+          <button id="addPresetToVariant">Add to variant</button>
+        </div>
+        <table>
+          <thead><tr><th>Order</th><th>Preset</th><th>Actions</th></tr></thead>
+          <tbody id="variantPresetRows"></tbody>
+        </table>
+      </fieldset>
+    </div>
+
+    <fieldset class="box">
+      <legend>Profiles</legend>
+      <div class="row">
+        <div>
+          <h4>AvondProfiel</h4>
+          <div class="row">
+            <label>gamma <input id="avond_gamma" type="number" /></label>
+            <label>brightness <input id="avond_brightness" type="number" /></label>
+            <label>hue <input id="avond_hue" type="number" /></label>
+            <label>saturation <input id="avond_saturation" type="number" /></label>
+            <label>sharpness <input id="avond_sharpness" type="number" /></label>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <h4>OchtendProfiel</h4>
+          <div class="row">
+            <label>gamma <input id="ochtend_gamma" type="number" /></label>
+            <label>brightness <input id="ochtend_brightness" type="number" /></label>
+            <label>hue <input id="ochtend_hue" type="number" /></label>
+            <label>saturation <input id="ochtend_saturation" type="number" /></label>
+            <label>sharpness <input id="ochtend_sharpness" type="number" /></label>
+          </div>
+        </div>
+      </div>
+    </fieldset>
 
     <script>
       const statusEl = document.getElementById('status');
-      const editor = document.getElementById('editor');
       const loadBtn = document.getElementById('load');
       const saveBtn = document.getElementById('save');
+      const cameraRows = document.getElementById('cameraRows');
+      const addCameraBtn = document.getElementById('addCamera');
+      const presetRows = document.getElementById('presetRows');
+      const addPresetBtn = document.getElementById('addPreset');
+      const variantSelect = document.getElementById('variantSelect');
+      const newVariantName = document.getElementById('newVariantName');
+      const addVariantBtn = document.getElementById('addVariant');
+      const removeVariantBtn = document.getElementById('removeVariant');
+      const availablePresets = document.getElementById('availablePresets');
+      const addPresetToVariantBtn = document.getElementById('addPresetToVariant');
+      const variantPresetRows = document.getElementById('variantPresetRows');
+
+      const atemServerEl = document.getElementById('atemServer');
+      const connectToAtemEl = document.getElementById('connectToAtem');
+      const connectToLumensEl = document.getElementById('connectToLumens');
+
+      const avond = {
+        gamma: document.getElementById('avond_gamma'),
+        brightness: document.getElementById('avond_brightness'),
+        hue: document.getElementById('avond_hue'),
+        saturation: document.getElementById('avond_saturation'),
+        sharpness: document.getElementById('avond_sharpness'),
+      };
+      const ochtend = {
+        gamma: document.getElementById('ochtend_gamma'),
+        brightness: document.getElementById('ochtend_brightness'),
+        hue: document.getElementById('ochtend_hue'),
+        saturation: document.getElementById('ochtend_saturation'),
+        sharpness: document.getElementById('ochtend_sharpness'),
+      };
+
+      let state = null;
 
       function setStatus(text, ok=true) {
         statusEl.textContent = text;
@@ -35,37 +157,255 @@
         setTimeout(() => { statusEl.textContent = ''; }, 2000);
       }
 
+      function baseUrl() { return location.origin.replace(/:\\d+$/, '') + ':8081'; }
+
       async function loadConfig() {
         setStatus('Loading...', true);
         try {
-          const base = location.origin.replace(/:\\d+$/, '') + ':8081';
-          const res = await fetch(base + '/config');
-          const json = await res.json();
-          editor.value = JSON.stringify(json, null, 2);
+          const res = await fetch(baseUrl() + '/config');
+          state = await res.json();
+          renderAll();
           setStatus('Loaded', true);
         } catch (e) {
+          console.error(e);
           setStatus('Load failed', false);
         }
       }
 
       async function saveConfig() {
         try {
-          const parsed = JSON.parse(editor.value);
-          const base = location.origin.replace(/:\\d+$/, '') + ':8081';
-          const res = await fetch(base + '/config', {
+          readAllIntoState();
+          const res = await fetch(baseUrl() + '/config', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(parsed)
+            body: JSON.stringify(state)
           });
           if (!res.ok) throw new Error('Save failed');
           setStatus('Saved', true);
         } catch (e) {
-          setStatus('Invalid JSON or save failed', false);
+          console.error(e);
+          setStatus('Save failed', false);
         }
       }
 
+      function renderAll() {
+        // settings
+        atemServerEl.value = state.atemServer || '';
+        connectToAtemEl.checked = !!state.connectToAtem;
+        connectToLumensEl.checked = !!state.connectToLumens;
+
+        // cameras
+        cameraRows.innerHTML = '';
+        const cameras = state.cameras || {};
+        Object.keys(cameras).forEach(key => addCameraRow(key, cameras[key]));
+
+        // presets
+        presetRows.innerHTML = '';
+        const presets = state.presets || {};
+        Object.keys(presets).forEach(name => addPresetRow(name, presets[name]));
+
+        // variants
+        renderVariants();
+
+        // profiles
+        const ap = state.avondProfiel || {};
+        avond.gamma.value = ap.gammanameindex || '';
+        avond.brightness.value = ap.brightnessnameindex || '';
+        avond.hue.value = ap.huenameindex || '';
+        avond.saturation.value = ap.saturationnameindex || '';
+        avond.sharpness.value = ap.sharpnessnameindex || '';
+
+        const op = state.ochtendProfiel || {};
+        ochtend.gamma.value = op.gammanameindex || '';
+        ochtend.brightness.value = op.brightnessnameindex || '';
+        ochtend.hue.value = op.huenameindex || '';
+        ochtend.saturation.value = op.saturationnameindex || '';
+        ochtend.sharpness.value = op.sharpnessnameindex || '';
+      }
+
+      function readAllIntoState() {
+        state.atemServer = atemServerEl.value.trim();
+        state.connectToAtem = !!connectToAtemEl.checked;
+        state.connectToLumens = !!connectToLumensEl.checked;
+
+        // cameras
+        const newCameras = {};
+        Array.from(cameraRows.querySelectorAll('tr')).forEach(tr => {
+          const key = tr.querySelector('[data-field="key"]').value.trim();
+          if (!key) return;
+          newCameras[key] = {
+            naam: tr.querySelector('[data-field="naam"]').value.trim(),
+            ip: tr.querySelector('[data-field="ip"]').value.trim(),
+            user: tr.querySelector('[data-field="user"]').value.trim(),
+            password: tr.querySelector('[data-field="password"]').value.trim(),
+            atemChannel: tr.querySelector('[data-field="atem"]').value.trim(),
+            ptz: tr.querySelector('[data-field="ptz"]').checked,
+          };
+        });
+        state.cameras = newCameras;
+
+        // presets
+        const newPresets = {};
+        Array.from(presetRows.querySelectorAll('tr')).forEach(tr => {
+          const name = tr.querySelector('[data-field="name"]').value.trim();
+          if (!name) return;
+          const cameraKey = tr.querySelector('[data-field="camera"]').value.trim();
+          const presetNum = tr.querySelector('[data-field="preset"]').value.trim();
+          const p = {};
+          if (cameraKey) p.camera = cameraKey;
+          if (presetNum) p.preset = presetNum;
+          newPresets[name] = p;
+        });
+        state.presets = newPresets;
+
+        // variants + presetUitzending
+        const variants = Array.from(variantSelect.options).map(o => o.value);
+        state.uitzendingVariant = variants;
+        const map = {};
+        variants.forEach(v => {
+          map[v] = Array.from(document.querySelectorAll(`[data-variant="${cssEscape(v)}"]`))
+            .sort((a,b) => parseInt(a.dataset.index) - parseInt(b.dataset.index))
+            .map(row => row.querySelector('[data-field="vp_name"]').textContent);
+        });
+        state.presetUitzending = map;
+
+        // profiles
+        state.avondProfiel = {
+          gammanameindex: avond.gamma.value.trim(),
+          brightnessnameindex: avond.brightness.value.trim(),
+          huenameindex: avond.hue.value.trim(),
+          saturationnameindex: avond.saturation.value.trim(),
+          sharpnessnameindex: avond.sharpness.value.trim(),
+        };
+        state.ochtendProfiel = {
+          gammanameindex: ochtend.gamma.value.trim(),
+          brightnessnameindex: ochtend.brightness.value.trim(),
+          huenameindex: ochtend.hue.value.trim(),
+          saturationnameindex: ochtend.saturation.value.trim(),
+          sharpnessnameindex: ochtend.sharpness.value.trim(),
+        };
+      }
+
+      function addCameraRow(key = '', c = {}) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><input data-field="key" type="text" value="${escapeHtml(key)}" /></td>
+          <td><input data-field="naam" type="text" value="${escapeHtml(c.naam||'')}" /></td>
+          <td><input data-field="ip" type="text" value="${escapeHtml(c.ip||'')}" /></td>
+          <td><input data-field="user" type="text" value="${escapeHtml(c.user||'')}" /></td>
+          <td><input data-field="password" type="text" value="${escapeHtml(c.password||'')}" /></td>
+          <td><input data-field="atem" type="text" value="${escapeHtml(c.atemChannel||'')}" /></td>
+          <td style="text-align:center"><input data-field="ptz" type="checkbox" ${c.ptz?'checked':''} /></td>
+          <td><button data-action="remove">Remove</button></td>
+        `;
+        tr.querySelector('[data-action="remove"]').addEventListener('click', () => tr.remove());
+        cameraRows.appendChild(tr);
+      }
+
+      function cameraKeyOptions(selected = '') {
+        return Object.keys(state.cameras || {}).map(k => `<option value="${escapeHtml(k)}" ${k===selected?'selected':''}>${escapeHtml(k)}</option>`).join('');
+      }
+
+      function addPresetRow(name = '', p = {}) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><input data-field="name" type="text" value="${escapeHtml(name)}" /></td>
+          <td>
+            <select data-field="camera">
+              <option value="">(none)</option>
+              ${cameraKeyOptions(p.camera||'')}
+            </select>
+          </td>
+          <td><input data-field="preset" type="text" value="${escapeHtml(p.preset||'')}" /></td>
+          <td><button data-action="remove">Remove</button></td>
+        `;
+        tr.querySelector('[data-action="remove"]').addEventListener('click', () => tr.remove());
+        presetRows.appendChild(tr);
+      }
+
+      function renderVariants() {
+        // select options
+        const variants = state.uitzendingVariant || [];
+        variantSelect.innerHTML = variants.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('');
+        // available presets dropdown
+        const presetNames = Object.keys(state.presets || {});
+        availablePresets.innerHTML = presetNames.map(n => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join('');
+        renderVariantPresets();
+      }
+
+      function renderVariantPresets() {
+        variantPresetRows.innerHTML = '';
+        const v = variantSelect.value;
+        const list = (state.presetUitzending && state.presetUitzending[v]) || [];
+        list.forEach((name, idx) => addVariantPresetRow(v, name, idx));
+      }
+
+      function addVariantPresetRow(variant, presetName, index) {
+        const tr = document.createElement('tr');
+        tr.dataset.variant = variant;
+        tr.dataset.index = String(index);
+        tr.innerHTML = `
+          <td>${index+1}</td>
+          <td data-field="vp_name">${escapeHtml(presetName)}</td>
+          <td>
+            <button data-action="up">Up</button>
+            <button data-action="down">Down</button>
+            <button data-action="remove">Remove</button>
+          </td>
+        `;
+        tr.querySelector('[data-action="remove"]').addEventListener('click', () => {
+          const list = state.presetUitzending[variant] || [];
+          state.presetUitzending[variant] = list.filter(n => n !== presetName || (n===presetName && --index<0));
+          renderVariantPresets();
+        });
+        tr.querySelector('[data-action="up"]').addEventListener('click', () => moveVariantPreset(variant, index, -1));
+        tr.querySelector('[data-action="down"]').addEventListener('click', () => moveVariantPreset(variant, index, +1));
+        variantPresetRows.appendChild(tr);
+      }
+
+      function moveVariantPreset(variant, index, delta) {
+        const list = state.presetUitzending[variant] || [];
+        const ni = index + delta;
+        if (ni < 0 || ni >= list.length) return;
+        const tmp = list[index];
+        list[index] = list[ni];
+        list[ni] = tmp;
+        renderVariantPresets();
+      }
+
+      addCameraBtn.addEventListener('click', () => addCameraRow('', {}));
+      addPresetBtn.addEventListener('click', () => addPresetRow('', {}));
+      addVariantBtn.addEventListener('click', () => {
+        const name = newVariantName.value.trim();
+        if (!name) return;
+        state.uitzendingVariant = state.uitzendingVariant || [];
+        if (!state.uitzendingVariant.includes(name)) state.uitzendingVariant.push(name);
+        state.presetUitzending = state.presetUitzending || {};
+        if (!state.presetUitzending[name]) state.presetUitzending[name] = [];
+        newVariantName.value = '';
+        renderVariants();
+      });
+      removeVariantBtn.addEventListener('click', () => {
+        const v = variantSelect.value;
+        state.uitzendingVariant = (state.uitzendingVariant || []).filter(n => n !== v);
+        if (state.presetUitzending) delete state.presetUitzending[v];
+        renderVariants();
+      });
+      addPresetToVariantBtn.addEventListener('click', () => {
+        const v = variantSelect.value;
+        const p = availablePresets.value;
+        if (!v || !p) return;
+        state.presetUitzending[v] = state.presetUitzending[v] || [];
+        state.presetUitzending[v].push(p);
+        renderVariantPresets();
+      });
+
+      function escapeHtml(s) { return (s||'').replace(/[&<>"]+/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+      function cssEscape(s) { return s.replace(/[^a-zA-Z0-9_-]/g, '_'); }
+
       loadBtn.addEventListener('click', loadConfig);
       saveBtn.addEventListener('click', saveConfig);
+      variantSelect.addEventListener('change', renderVariantPresets);
       loadConfig();
     </script>
   </body>
