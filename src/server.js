@@ -65,10 +65,10 @@ if (process.env.NODE_ENV !== 'production') {
 let httpUtils = new HttpUtils();
 
 // Initialize mock state if in test mode
+let mockState = null;
 if (isTestMode) {
-  const { mockState } = require('./mock.js');
-  // Override global state variables with mock values
-  global.mockState = mockState;
+  const { mockState: importedMockState } = require('./mock.js');
+  mockState = importedMockState;
 }
 
 const app = express();
@@ -155,13 +155,13 @@ const filesUrl = `http://${streamerIP}/usapi?method=get-media-files&disk-type=1&
 const downloadUrl = `http://${streamerIP}:8080/download`;
 
 // Initialize state variables (use mock values in test mode)
-let preset = isTestMode ? (global.mockState?.preset || 'default') : '';
-let uitzending = isTestMode ? (global.mockState?.uitzending || 'avond') : '';
-let streamStatus = isTestMode ? (global.mockState?.streamStatus || 'stopped') : '';
-let liveStatus = isTestMode ? (global.mockState?.liveStatus || '{"status":0}') : '';
-let statusCameras = isTestMode ? (global.mockState?.statusCameras || []) : [];
-let camerasStatus = isTestMode ? (global.mockState?.camerasStatus || 'ON') : '';
-let recordOn = isTestMode ? (global.mockState?.recordOn || false) : false;
+let preset = isTestMode ? (mockState?.preset || 'default') : '';
+let uitzending = isTestMode ? (mockState?.uitzending || 'avond') : '';
+let streamStatus = isTestMode ? (mockState?.streamStatus || 'stopped') : '';
+let liveStatus = isTestMode ? (mockState?.liveStatus || '{"status":0}') : '';
+let statusCameras = isTestMode ? (mockState?.statusCameras || []) : [];
+let camerasStatus = isTestMode ? (mockState?.camerasStatus || 'ON') : '';
+let recordOn = isTestMode ? (mockState?.recordOn || false) : false;
 
 let CLIENTS = expressWs.getWss().clients;
 
