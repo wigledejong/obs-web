@@ -59,14 +59,6 @@ function initSchema(db) {
       saturation_index INTEGER,
       sharpness_index INTEGER
     );
-
-    CREATE TABLE IF NOT EXISTS config_snapshot (
-      id INTEGER PRIMARY KEY,
-      name TEXT UNIQUE NOT NULL,
-      json TEXT NOT NULL,
-      created_at TEXT NOT NULL,
-      updated_at TEXT NOT NULL
-    );
   `);
 }
 
@@ -199,30 +191,6 @@ module.exports = {
   initSchema,
   migrateJsonToNormalized,
   buildJsonFromNormalized,
-  // snapshots API
-  listSnapshots: function(db) {
-    return db.prepare('SELECT id, name, created_at, updated_at FROM config_snapshot ORDER BY created_at DESC').all();
-  },
-  getSnapshot: function(db, id) {
-    return db.prepare('SELECT id, name, json, created_at, updated_at FROM config_snapshot WHERE id=?').get(id);
-  },
-  createSnapshot: function(db, name, jsonObj) {
-    const now = new Date().toISOString();
-    const json = JSON.stringify(jsonObj);
-    const ins = db.prepare('INSERT INTO config_snapshot(name, json, created_at, updated_at) VALUES (?,?,?,?)');
-    const info = ins.run(name, json, now, now);
-    return info.lastInsertRowid;
-  },
-  updateSnapshot: function(db, id, fields) {
-    const now = new Date().toISOString();
-    if (fields.json) {
-      const json = JSON.stringify(fields.json);
-      db.prepare('UPDATE config_snapshot SET json=?, updated_at=? WHERE id=?').run(json, now, id);
-    }
-    if (fields.name) {
-      db.prepare('UPDATE config_snapshot SET name=?, updated_at=? WHERE id=?').run(fields.name, now, id);
-    }
-  }
 };
 
 

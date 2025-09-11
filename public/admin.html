@@ -26,12 +26,6 @@
     <div class="row">
       <button id="load">Load</button>
       <button id="save">Save</button>
-      <div class="row" style="gap:8px">
-        <select id="snapshotSelect"></select>
-        <button id="refreshSnapshots">Refresh</button>
-        <button id="createSnapshot">Create snapshot</button>
-        <button id="activateSnapshot">Activate snapshot</button>
-      </div>
       <span id="status" class="status"></span>
     </div>
 
@@ -124,10 +118,6 @@
       const statusEl = document.getElementById('status');
       const loadBtn = document.getElementById('load');
       const saveBtn = document.getElementById('save');
-      const snapshotSelect = document.getElementById('snapshotSelect');
-      const refreshSnapshotsBtn = document.getElementById('refreshSnapshots');
-      const createSnapshotBtn = document.getElementById('createSnapshot');
-      const activateSnapshotBtn = document.getElementById('activateSnapshot');
       const cameraRows = document.getElementById('cameraRows');
       const addCameraBtn = document.getElementById('addCamera');
       const presetRows = document.getElementById('presetRows');
@@ -168,16 +158,6 @@
       }
 
       function baseUrl() { return location.origin.replace(/:\\d+$/, '') + ':8081'; }
-
-      async function loadSnapshots() {
-        try {
-          const res = await fetch(baseUrl() + '/config/snapshots');
-          const rows = await res.json();
-          snapshotSelect.innerHTML = rows.map(r => `<option value="${r.id}">${r.name} (${new Date(r.updated_at).toLocaleString()})</option>`).join('');
-        } catch (e) {
-          console.error(e);
-        }
-      }
 
       async function loadConfig() {
         setStatus('Loading...', true);
@@ -425,21 +405,8 @@
 
       loadBtn.addEventListener('click', loadConfig);
       saveBtn.addEventListener('click', saveConfig);
-      refreshSnapshotsBtn.addEventListener('click', loadSnapshots);
-      createSnapshotBtn.addEventListener('click', async () => {
-        const name = prompt('Snapshot name?') || undefined;
-        const res = await fetch(baseUrl() + '/config/snapshots', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name }) });
-        if (res.ok) { setStatus('Snapshot created'); loadSnapshots(); } else { setStatus('Create failed', false); }
-      });
-      activateSnapshotBtn.addEventListener('click', async () => {
-        const id = snapshotSelect.value;
-        if (!id) return;
-        const res = await fetch(baseUrl() + '/config/snapshots/' + id + '/activate', { method: 'POST' });
-        if (res.ok) { setStatus('Activated'); loadConfig(); } else { setStatus('Activate failed', false); }
-      });
       variantSelect.addEventListener('change', renderVariantPresets);
       loadConfig();
-      loadSnapshots();
     </script>
   </body>
   </html>

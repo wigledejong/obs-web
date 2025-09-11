@@ -3,7 +3,7 @@ const ATEM        = require('applest-atem');
 const atemConfig = require('./atemConfig.json');
 // Load config from SQLite DB instead of file
 const { initDb } = require('./db');
-const { initSchema, migrateJsonToNormalized, buildJsonFromNormalized, listSnapshots, getSnapshot, createSnapshot, updateSnapshot } = require('./db_normalized');
+const { initSchema, migrateJsonToNormalized, buildJsonFromNormalized } = require('./db_normalized');
 const SelfReloadJSON = require('self-reload-json');
 const cors = require('cors');
 const http = require('http');
@@ -451,51 +451,6 @@ app.put('/config', function(request, response){
   } catch (e) {
     logger.error(e);
     response.status(500).json({ error: 'Failed to update config' });
-  }
-});
-
-// Config snapshots
-app.get('/config/snapshots', function(req, res) {
-  try {
-    const rows = listSnapshots(db);
-    res.json(rows);
-  } catch (e) {
-    logger.error(e);
-    res.status(500).json({ error: 'Failed list' });
-  }
-});
-app.get('/config/snapshots/:id', function(req, res) {
-  try {
-    const row = getSnapshot(db, parseInt(req.params.id));
-    if (!row) return res.status(404).end();
-    res.json(row);
-  } catch (e) {
-    logger.error(e);
-    res.status(500).json({ error: 'Failed get' });
-  }
-});
-app.post('/config/snapshots', function(req, res) {
-  try {
-    const name = (req.body && req.body.name) || ('snapshot-' + new Date().toISOString());
-    const id = createSnapshot(db, name, appConfig);
-    res.json({ id, name });
-  } catch (e) {
-    logger.error(e);
-    res.status(500).json({ error: 'Failed create' });
-  }
-});
-app.post('/config/snapshots/:id/activate', function(req, res) {
-  try {
-    const row = getSnapshot(db, parseInt(req.params.id));
-    if (!row) return res.status(404).end();
-    const json = JSON.parse(row.json);
-    migrateJsonToNormalized(db, json);
-    appConfig = buildJsonFromNormalized(db);
-    cameras = appConfig.cameras;
-    res.json({ ok: true });
-  } catch (e) {
-    logger.error(e);
-    res.status(500).json({ error: 'Failed activate' });
   }
 });
 
