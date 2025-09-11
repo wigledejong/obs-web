@@ -410,10 +410,20 @@
         // select options - sorted alphabetically
         const variants = (state.uitzendingVariant || []).sort();
         variantSelect.innerHTML = variants.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('');
-        // available presets dropdown - sorted alphabetically
-        const presetNames = Object.keys(state.presets || {}).sort();
-        availablePresets.innerHTML = presetNames.map(n => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join('');
+        // available presets dropdown - sorted alphabetically and filtered
+        updateAvailablePresets();
         renderVariantPresets();
+      }
+
+      function updateAvailablePresets() {
+        const selectedVariant = variantSelect.value;
+        const allPresets = Object.keys(state.presets || {});
+        const usedPresets = (state.presetUitzending && state.presetUitzending[selectedVariant]) || [];
+        
+        // Filter out presets that are already in the selected variant
+        const availablePresetsList = allPresets.filter(preset => !usedPresets.includes(preset)).sort();
+        
+        availablePresets.innerHTML = availablePresetsList.map(n => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join('');
       }
 
       function renderVariantPresets() {
@@ -439,6 +449,7 @@
         tr.querySelector('[data-action="remove"]').addEventListener('click', () => {
           const list = state.presetUitzending[variant] || [];
           state.presetUitzending[variant] = list.filter(n => n !== presetName || (n===presetName && --index<0));
+          updateAvailablePresets();
           renderVariantPresets();
         });
         tr.querySelector('[data-action="up"]').addEventListener('click', () => moveVariantPreset(variant, index, -1));
@@ -480,6 +491,7 @@
         if (!v || !p) return;
         state.presetUitzending[v] = state.presetUitzending[v] || [];
         state.presetUitzending[v].push(p);
+        updateAvailablePresets();
         renderVariantPresets();
       });
 
@@ -570,7 +582,10 @@
 
       loadBtn.addEventListener('click', loadConfig);
       saveBtn.addEventListener('click', saveConfig);
-      variantSelect.addEventListener('change', renderVariantPresets);
+      variantSelect.addEventListener('change', () => {
+        updateAvailablePresets();
+        renderVariantPresets();
+      });
       
       // Preset filtering and sorting event listeners
       presetCameraFilter.addEventListener('change', filterPresets);
