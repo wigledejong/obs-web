@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Config Admin</title>
+    <link rel="icon" href="/favicon.png" />
+    <style>
+      body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial, sans-serif; margin: 16px; }
+      .row { display: flex; gap: 12px; align-items: center; }
+      textarea { width: 100%; height: 60vh; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 13px; }
+      button { padding: 8px 12px; }
+      .status { margin-left: 8px; font-size: 13px; }
+    </style>
+  </head>
+  <body>
+    <h1>Config Admin</h1>
+    <div class="row">
+      <button id="load">Load</button>
+      <button id="save">Save</button>
+      <span id="status" class="status"></span>
+    </div>
+    <p>Edit the JSON config below and click Save.</p>
+    <textarea id="editor"></textarea>
+
+    <script>
+      const statusEl = document.getElementById('status');
+      const editor = document.getElementById('editor');
+      const loadBtn = document.getElementById('load');
+      const saveBtn = document.getElementById('save');
+
+      function setStatus(text, ok=true) {
+        statusEl.textContent = text;
+        statusEl.style.color = ok ? 'green' : 'tomato';
+        setTimeout(() => { statusEl.textContent = ''; }, 2000);
+      }
+
+      async function loadConfig() {
+        setStatus('Loading...', true);
+        try {
+          const base = location.origin.replace(/:\\d+$/, '') + ':8081';
+          const res = await fetch(base + '/config');
+          const json = await res.json();
+          editor.value = JSON.stringify(json, null, 2);
+          setStatus('Loaded', true);
+        } catch (e) {
+          setStatus('Load failed', false);
+        }
+      }
+
+      async function saveConfig() {
+        try {
+          const parsed = JSON.parse(editor.value);
+          const base = location.origin.replace(/:\\d+$/, '') + ':8081';
+          const res = await fetch(base + '/config', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(parsed)
+          });
+          if (!res.ok) throw new Error('Save failed');
+          setStatus('Saved', true);
+        } catch (e) {
+          setStatus('Invalid JSON or save failed', false);
+        }
+      }
+
+      loadBtn.addEventListener('click', loadConfig);
+      saveBtn.addEventListener('click', saveConfig);
+      loadConfig();
+    </script>
+  </body>
+  </html>
+
+

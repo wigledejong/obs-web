@@ -2,7 +2,7 @@ const express     = require('express');
 const ATEM        = require('applest-atem');
 const atemConfig = require('./atemConfig.json');
 // Load config from SQLite DB instead of file
-const { initDb, readConfig, migrateFromFileIfEmpty } = require('./db');
+const { initDb, readConfig, writeConfig, migrateFromFileIfEmpty } = require('./db');
 const SelfReloadJSON = require('self-reload-json');
 const cors = require('cors');
 const http = require('http');
@@ -423,6 +423,23 @@ app.get('/config', function(request, response){
   logger.info("Config wordt opgehaald");
   loadConfig();
   response.send(appConfig);
+});
+
+app.put('/config', function(request, response){
+  logger.info("Config wordt bijgewerkt");
+  try {
+    const body = request.body;
+    if (!body || typeof body !== 'object') {
+      return response.status(400).json({ error: 'Invalid config body' });
+    }
+    writeConfig(db, body);
+    appConfig = body;
+    cameras = appConfig.cameras;
+    response.json({ ok: true });
+  } catch (e) {
+    logger.error(e);
+    response.status(500).json({ error: 'Failed to update config' });
+  }
 });
 
 app.get('/camerasOff', async function (request, response) {
