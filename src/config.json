@@ -171,6 +171,10 @@
       "camera": "camera3",
       "preset": "40"
     },
+    "Band 5": {
+      "camera": "camera2",
+      "preset": "6"
+    },
     "Pianist": {
       "camera": "camera2",
       "preset": "41"
@@ -178,6 +182,10 @@
     "Pianist 3": {
       "camera": "camera2",
       "preset": "4"
+    },
+    "Pianist 4": {
+      "camera": "camera1",
+      "preset": "17"
     },
     "Spreker 3": {
       "camera": "camera3",
@@ -220,6 +228,10 @@
       "preset": "22"
     },
     "Lessenaar Oud": {
+      "camera": "camera1",
+      "preset": "30"
+    },
+    "Lessenaar 8": {
       "camera": "camera1",
       "preset": "30"
     },
@@ -391,13 +403,17 @@
       "camera": "camera1",
       "preset": "51"
     },
+    "Belijdenis 4": {
+      "camera": "camera1",
+      "preset": "18"
+    },
     "Scherm2": {
       "camera": "camera2",
-      "preset": "13"
+      "preset": "6"
     },
     "Scherm": {
       "camera": "camera1",
-      "preset": "16"
+      "preset": "18"
     },
     "Piano 3": {
       "camera": "camera1",
@@ -430,6 +446,18 @@
     "CrossOver3": {
       "camera": "camera3",
       "preset": "20"
+    },
+    "Scherm3": {
+      "camera": "camera2",
+      "preset": "8"
+    },
+    "Interview": {
+      "camera": "camera2",
+      "preset": "17"
+    },
+    "Interview2": {
+      "camera": "camera2",
+      "preset": "18"
     }
   },
   "uitzendingVariant": [
@@ -440,12 +468,10 @@
     "Avondmaal Mid",
     "Dopen",
     "Belijdenis",
-    "Interview",
+    "Boekpresentatie",
     "Jongerendienst",
+    "Jongerendienst 2",
     "Orgel concert",
-    "Ambtsdragers",
-    "Diploma Uitreiking",
-    "CrossOver",
     "Alles"
   ],
   "presetUitzending": {
@@ -466,6 +492,7 @@
       "Band 2",
       "Band 3",
       "Band 4",
+      "Band 5",
       "Begin dienst 2",
       "Begin dienst",
       "Begin stream",
@@ -473,6 +500,7 @@
       "Belijdenis 1",
       "Belijdenis 2",
       "Belijdenis 3",
+      "Belijdenis 4",
       "Binnenkomst 2",
       "Binnenkomst",
       "Camera Opzij",
@@ -500,6 +528,8 @@
       "Lessenaar 4",
       "Lessenaar 5",
       "Lessenaar 6",
+      "Lessenaar 7",
+      "Lessenaar 8",
       "Lessenaar Oud",
       "Lessenaar",
       "Organist 2",
@@ -515,9 +545,10 @@
       "Overzicht uitgezoomd",
       "Overzicht",
       "Pauze",
+      "Pianist",
       "Pianist 2",
       "Pianist 3",
-      "Pianist",
+      "Pianist 4",
       "Piano 2",
       "Piano",
       "Pinksterraam",
@@ -577,22 +608,21 @@
       "Overzicht opzij",
       "Overzicht boven",
       "Collecte",
-      "Einde dienst",
-      "Extra plaatje"
+      "Einde dienst"
     ],
     "Belijdenis": [
       "Begin dienst",
-      "Lessenaar 7",
+      "Lessenaar 8",
       "Predikant",
+      "Tafel",
       "Organist",
       "Orgel",
-      "Trompettist",
-      "Gebed",
-      "Band 1",
-      "Band 3",
+      "Pianist 4",
+      "Band 5",
       "Belijdenis 1",
       "Belijdenis 2",
       "Belijdenis 3",
+      "Belijdenis 4",
       "Overzicht opzij",
       "Overzicht midden",
       "Overzicht boven",
@@ -642,6 +672,20 @@
       "Organist",
       "Overzicht opzij",
       "Overzicht midden 2",
+      "Collecte",
+      "Orgel"
+    ],
+    "Jongerendienst 2": [
+      "Begin dienst",
+      "Tafel",
+      "Lessenaar",
+      "Predikant",
+      "Band 5",
+      "Pianist 4",
+      "Organist",
+      "Overzicht opzij",
+      "Overzicht midden 2",
+      "Overzicht boven",
       "Collecte",
       "Orgel"
     ],
@@ -748,21 +792,18 @@
       "Overzicht midden",
       "Collecte"
     ],
-    "Interview": [
+    "Boekpresentatie": [
       "Begin stream",
-      "Pauze",
-      "Samen",
-      "Samen opzij",
-      "Spreker L",
-      "Spreker R",
-      "Spreker R2",
-      "Lessenaar 2",
+      "Scherm",
+      "Scherm3",
+      "Interview",
+      "Interview2",
       "Overzicht opzij",
-      "Overzicht boven2",
-      "Organist",
-      "Orgel",
-      "Glas in lood",
-      "Glas in lood 2"
+      "Overzicht boven",
+      "Overzicht midden",
+      "Overzicht midden 2",
+      "Overzicht uitgezoomd",
+      "Orgel"
     ],
     "Ambtsdragers": [
       "Begin dienst",
@@ -844,7 +885,26 @@
       "Podium 2",
       "Piano 3",
       "Piano 4"
+    ],
+    "PassieConcert": [
+      "Overzicht opzij",
+      "Overzicht midden",
+      "Overzicht midden 2",
+      "Overzicht boven",
+      "Orgel",
+      "Organist",
+      "Podium",
+      "Podium 2"
+    ],
+    "Presentatie": [
+      "Overzicht opzij",
+      "Overzicht midden",
+      "Overzicht midden 2",
+      "Scherm",
+      "Overzicht boven",
+      "Orgel"
     ]
+
   },
   "avondProfiel": {
     "gammanameindex": "3",
