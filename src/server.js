@@ -1,7 +1,8 @@
 const express     = require('express');
 const ATEM        = require('applest-atem');
 const atemConfig = require('./atemConfig.json');
-const camConfig = require('./config.json');
+// Load config from SQLite DB instead of file
+const { initDb, readConfig, migrateFromFileIfEmpty } = require('./db');
 const SelfReloadJSON = require('self-reload-json');
 const cors = require('cors');
 const http = require('http');
@@ -54,9 +55,11 @@ const app = express();
 var expressWs = require('express-ws')(app);
 const wsServer = expressWs.getWss();
 
-var appConfig = new SelfReloadJSON('src/config.json');
-logger.info('Config loaded:'+JSON.stringify(camConfig.cameras));
-var cameras = camConfig.cameras;
+const db = initDb();
+migrateFromFileIfEmpty(db, logger);
+let appConfig = readConfig(db);
+logger.info('Config loaded:'+JSON.stringify(appConfig.cameras));
+var cameras = appConfig.cameras;
 
 const DeviceStatus = {
   statusFirst: 0x01,      // first boot
@@ -408,7 +411,7 @@ async function downloadAll() {
 }
 
 function loadConfig() {
-  appConfig = new SelfReloadJSON('src/config.json');
+  appConfig = readConfig(db);
 }
 
 app.use(cors());
