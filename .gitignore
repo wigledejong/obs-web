@@ -1,13 +1,30 @@
-/node_modules/
-/public/bundle-*
-/public/index.html
-package-lock.json
-.DS_Store
-/server-2021-06-10-13.log
-*.gz
+# Node
+node_modules/
+
+# Env
+.env
+.env.*
+!.env.example
+
+# Logs
 *.log
-*.json
-/server-2021-09-11.log.1
-/server-2021-09-12.log.1
-/.vs/*
-/server-2025-09-07.log.1
+logs/
+server-*.log
+
+# Build outputs
+public/bundle-*.js
+public/bundle-*.js.map
+public/bundle-*.css
+
+# OS/IDE
+.DS_Store
+.idea/
+.vscode/
+
+# Databases and local data
+src/*.sqlite
+*.sqlite
+
+# Misc cache
+*.cache
+.svelte-kit/

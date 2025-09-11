@@ -52,6 +52,7 @@ let httpUtils = new HttpUtils();
 
 const app = express();
 var expressWs = require('express-ws')(app);
+const wsServer = expressWs.getWss();
 
 var appConfig = new SelfReloadJSON('src/config.json');
 logger.info('Config loaded:'+JSON.stringify(camConfig.cameras));
@@ -113,6 +114,18 @@ let camerasStatus = '';
 let recordOn = false;
 
 let CLIENTS = expressWs.getWss().clients;
+
+// WebSocket heartbeat: terminate dead connections
+setInterval(() => {
+  wsServer.clients.forEach((ws) => {
+    if (ws.isAlive === false) {
+      try { ws.terminate(); } catch (e) { /* ignore */ }
+      return;
+    }
+    ws.isAlive = false;
+    try { ws.ping(); } catch (e) { /* ignore */ }
+  });
+}, 30000);
 
 let device = 0;
 for (var switcher of atemConfig.switchers) {
@@ -625,6 +638,8 @@ app.post('/saveUitzending', function (request, response) {
 });
 
 app.ws('/atemWebSocket', function(ws, req) {
+  ws.isAlive = true;
+  ws.on('pong', function() { ws.isAlive = true; });
   const ip = req.connection.remoteAddress;
   logger.info('client:'+ip +' connected');
   // initialize client with all switchers
@@ -677,6 +692,9 @@ app.ws('/atemWebSocket', function(ws, req) {
         atem[method](params.number);
         break;
     }
+  });
+  ws.on('close', function() {
+    logger.info('client disconnected');
   });
 });
 

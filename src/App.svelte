@@ -1,7 +1,7 @@
 <script>
 
   // Imports
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
   import './style.scss';
   import { mdiCameraOff, mdiCamera, mdiMicrophoneOff, mdiMicrophone, mdiAccessPoint, mdiAccessPointOff, mdiHeadphonesOff,
     mdiAccessPointRemove, mdiHeadphones, mdiPictureInPictureTopRight, mdiRecordRec} from '@mdi/js';
@@ -75,6 +75,46 @@
   let atemWebSocket;
   let appConfig;
   let presetChunks;
+  let reconnectAttempts = 0;
+  const maxReconnectDelayMs = 30000;
+  let serverBase = '';
+  let pollingActive = true;
+  let statusTimeoutId = null;
+  let screenshotTimeoutId = null;
+  let actionLockUntil = 0;
+  let toast = '';
+  let toastTimer = null;
+
+  function showToast(message, ms = 1200) {
+    toast = message;
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { toast = ''; }, ms);
+  }
+
+  function canActNow(delayMs = 500) {
+    const now = Date.now();
+    if (now < actionLockUntil) {
+      showToast('Even geduld...');
+      return false;
+    }
+    actionLockUntil = now + delayMs;
+    return true;
+  }
+
+  // Helper: fetch with timeout and optional JSON/text parsing
+  async function fetchWithTimeout(url, options = {}, timeoutMs = 8000, parse = 'json') {
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const res = await fetch(url, { ...options, signal: controller.signal });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      if (parse === 'json') return await res.json();
+      if (parse === 'text') return await res.text();
+      return res;
+    } finally {
+      clearTimeout(id);
+    }
+  }
 
   $: presetChunks = Array(Math.ceil(presets.length / 4))
      .fill()
@@ -91,6 +131,7 @@
       switchers[0].setWebsocket(atemWebSocket);
       // update svelte
       atemWebSocket = atemWebSocket;
+      reconnectAttempts = 0;
     });
 
     atemWebSocket.addEventListener("message", async function(event) {
@@ -126,6 +167,14 @@
     });
     atemWebSocket.addEventListener("close", function() {
       console.log("Websocket ATEM closed");
+      // Exponential backoff reconnect
+      reconnectAttempts += 1;
+      const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), maxReconnectDelayMs);
+      setTimeout(() => {
+        if (!atemWebSocket || atemWebSocket.readyState === WebSocket.CLOSED) {
+          connectAtem();
+        }
+      }, delay);
     });
   }
 
@@ -136,6 +185,7 @@
     await fetch(url+':8081/config')
       .then(async (res) => {
         appConfig = await res.json();
+        serverBase = 'http://' + appConfig.atemServer;
         cameras = appConfig.cameras;
         presetsConfig = [];
         presetUitzending = [];
@@ -150,7 +200,7 @@
 
   async function loginStreamer(){
     console.log("Login Streamer");
-    await fetch('http://'+ appConfig.atemServer +'/loginStreamer')
+    await fetch(serverBase + '/loginStreamer')
     .then(async (res) => {
       if (res.statusText === "OK"){
         isConnected = true;
@@ -173,10 +223,11 @@
   }
 
   async function startStream(){
+    if (!canActNow(800)) return;
     if (confirm("Weet je zeker dat je de stream wilt starten?") == true) {
       isLoaded = false;
       while(!streaming) {
-        await fetch('http://'+ appConfig.atemServer +'/startStreamen');
+        await fetch(serverBase + '/startStreamen').catch(() => {});
         await streamStatus();
       }
       isLoaded = true;
@@ -184,10 +235,11 @@
   }
 
   async function stopStream(){
+    if (!canActNow(800)) return;
     if (confirm("Weet je zeker dat je de stream wilt stoppen?") == true) {
       isLoaded = false;
       while(streaming) {
-        await fetch('http://' + appConfig.atemServer + '/stopStreamen');
+        await fetch(serverBase + '/stopStreamen').catch(() => {});
         await streamStatus();
       }
       isLoaded = true;
@@ -195,10 +247,11 @@
   }
 
   async function startRecord(){
+    if (!canActNow(800)) return;
     if (confirm("Weet je zeker dat je de recording wilt starten?") == true) {
       isLoaded = false;
       while(!recording) {
-        await fetch('http://'+ appConfig.atemServer +'/startRecording');
+        await fetch(serverBase + '/startRecording').catch(() => {});
         await recordStatus();
       }
       isLoaded = true;
@@ -206,10 +259,11 @@
   }
 
   async function stopRecord(){
+    if (!canActNow(800)) return;
     if (confirm("Weet je zeker dat je de recording wilt stoppen?") == true) {
       isLoaded = false;
       while(recording) {
-        await fetch('http://' + appConfig.atemServer + '/stopRecording');
+        await fetch(serverBase + '/stopRecording').catch(() => {});
         await recordStatus();
       }
       isLoaded = true;
@@ -217,21 +271,20 @@
   }
 
   async function getStatus(){
-   if(isConnected) {
+   if(isConnected && pollingActive) {
      let cameraOnBool = false;
      let cameraErrorBool = false;
-     await fetch('http://'+ appConfig.atemServer +'/getStatus')
-        .then(async (res) => {
-         let data = await res.json();
-         if(data.statusStream === "error"){
-            streaming = false;
-            isConnected = false;
-            loginStreamer();
-         }else{
-            streaming = data.statusStream;
-         }
-         camerasStatus = data.statusCamera
-         recording = data.statusRecord
+     await fetchWithTimeout(serverBase + '/getStatus', {}, 8000, 'json')
+      .then((data) => {
+        if(data.statusStream === "error"){
+          streaming = false;
+          isConnected = false;
+          loginStreamer();
+        }else{
+          streaming = data.statusStream;
+        }
+        camerasStatus = data.statusCamera
+        recording = data.statusRecord
       })
       .catch((err) => {
         console.log(err);
@@ -246,18 +299,20 @@
       }
       cameraOn = cameraOnBool;
       cameraError = cameraErrorBool;
-      setTimeout(getStatus, 1000);
+      clearTimeout(statusTimeoutId);
+      statusTimeoutId = setTimeout(getStatus, 1000);
     }else{
       streaming = false;
       await statusCameras();
-      setTimeout(getStatus, 60000);
+      clearTimeout(statusTimeoutId);
+      statusTimeoutId = setTimeout(getStatus, 60000);
     }
   }
 
   async function statusCameras(){
     let cameraOnBool = false;
     let cameraErrorBool = false;
-    await fetch('http://'+ appConfig.atemServer +'/getCameraStatus')
+    await fetch(serverBase + '/getCameraStatus')
       .then(res => res.json())
       .then(data => camerasStatus = data)
     for (let key in camerasStatus){
@@ -273,7 +328,7 @@
   }
 
   async function streamStatus() {
-   await fetch('http://'+ appConfig.atemServer +'/streamStatus')
+   await fetch(serverBase + '/streamStatus')
       .then(res => res.json())
       .then(data => streaming = data)
       .catch(err => {
@@ -283,7 +338,7 @@
   }
 
   async function recordStatus() {
-   await fetch('http://'+ appConfig.atemServer +'/recordStatus')
+   await fetch(serverBase + '/recordStatus')
       .then(res => res.json())
       .then(data => recording = data)
       .catch(err => {
@@ -324,6 +379,7 @@
   }
 
   async function setPreset(e){
+    if (!canActNow(400)) return;
     isLoaded = false;
     let nextPreset = e.currentTarget.textContent;
     let preset = presetsConfig[nextPreset];
@@ -373,7 +429,7 @@
         body: nextPreset
       };
 
-      await fetch('http://'+ appConfig.atemServer +'/savePreset', options);
+      await fetch(serverBase + '/savePreset', options).catch(() => {});
       getSavedPreset();
 
     } else {
@@ -388,6 +444,7 @@
   }
         
   async function changeUitzending(e){
+    if (!canActNow(400)) return;
     isLoaded = false;
     let newUitzending = e.currentTarget.textContent.trim();
     const options = {
@@ -397,14 +454,14 @@
         body: newUitzending
       };
 
-    await fetch('http://'+ appConfig.atemServer +'/saveUitzending', options);
+    await fetch(serverBase + '/saveUitzending', options).catch(() => {});
     await getSavedUitzending();
     isLoaded = true;
   }
 
   async function getSavedPreset(){
     let preset = '';
-    await fetch('http://'+ appConfig.atemServer +'/getPreset')
+    await fetch(serverBase + '/getPreset')
       .then(res => res.text())
       .then(data => preset = data);
     savedPreset = preset;
@@ -413,7 +470,7 @@
   async function getSavedUitzending(){
     let uitzending = '';
     presets = [];
-    await fetch('http://'+ appConfig.atemServer +'/getUitzending')
+    await fetch(serverBase + '/getUitzending')
       .then(res => res.text())
       .then(data => uitzending = data);
     savedUitzending = uitzending;
@@ -438,13 +495,13 @@
     let cameraStatus = '';
     if (cameraOn) {
       if (confirm("Weet je zeker dat je camera's wilt uitzetten?") == true) {
-        await fetch('http://'+ appConfig.atemServer +'/camerasOff')
+        await fetch(serverBase + '/camerasOff')
           .then(res => res.json())
           .then(data => cameraStatus = data)
        }
     } else {
       if (confirm("Weet je zeker dat je camera's wilt aanzetten?") == true) {
-        await fetch('http://'+ appConfig.atemServer +'/camerasOn')
+        await fetch(serverBase + '/camerasOn')
           .then(res => res.json())
           .then(data => cameraStatus = data)
       }
@@ -476,6 +533,7 @@
   }
 
   function toggleMute() {
+    if (!canActNow(300)) return;
     let audio = switchers[0].getAudio();
     if(audio[8].on){
         switchers[0].runMacro(0);
@@ -487,6 +545,7 @@
   }
 
   function toggleMutePC() {
+    if (!canActNow(300)) return;
     let audio = switchers[0].getAudio();
     if(audio[0].on){
         switchers[0].runMacro(3);
@@ -498,6 +557,7 @@
   }
 
   function togglePip() {
+      if (!canActNow(300)) return;
       let video = switchers[0].getVideo();
       if(video.ME[0].upstreamKeyState[0]){
           switchers[0].runMacro(16);
@@ -509,14 +569,15 @@
   }
 
   async function toggleRecord() {
+      if (!canActNow(500)) return;
       let data = '';
-      await fetch('http://'+ appConfig.atemServer +'/setRecord?value='+!isRecordAan);
+      await fetch(serverBase + '/setRecord?value='+!isRecordAan).catch(() => {});
       isRecordAan=!isRecordAan;
   }
 
   async function getRecordOn(){
     let recordOn = false;
-    await fetch('http://'+ appConfig.atemServer +'/getRecordOn')
+    await fetch(serverBase + '/getRecordOn')
       .then(res => res.text())
       .then(data => recordOn = data);
     isRecordAan = (recordOn === 'true');
@@ -544,6 +605,11 @@
 
 
   function getScreenshot() {
+       if(!pollingActive){
+          clearTimeout(screenshotTimeoutId);
+          screenshotTimeoutId = setTimeout(getScreenshot, 1000);
+          return;
+       }
        if(!isConnected){
           document.querySelector('#program').alt= 'De systemen staan uit om de cameras te bedienen. Schakel deze in.';
           document.querySelector('#program').src= ' ';
@@ -553,22 +619,46 @@
           document.querySelector('#program').src= ' ';
           document.querySelector('#program').className = '';
        }else if(isConnected){
-          document.querySelector('#program').src= 'http://'+ appConfig.atemServer +'/screenshot.jpg?v='+new Date().getTime();
+          document.querySelector('#program').src= serverBase + '/screenshot.jpg?v='+new Date().getTime();
           document.querySelector('#program').className = '';
        }else{
           document.querySelector('#program').alt= 'De systemen staan uit om de cameras te bedienen. Schakel deze in.';
           document.querySelector('#program').src= ' ';
           document.querySelector('#program').className = '';
        }
-       setTimeout(getScreenshot, 500);
+       clearTimeout(screenshotTimeoutId);
+       screenshotTimeoutId = setTimeout(getScreenshot, 500);
+  }
+
+  // Pause/resume polling when tab visibility changes
+  function handleVisibility() {
+    pollingActive = !document.hidden;
+    if (pollingActive) {
+      getStatus();
+      getScreenshot();
+    }
   }
 
   async function getStreamerStatus(){
     let streamStatus = '';
-    await fetch('http://'+ appConfig.atemServer +'/streamStatus')
+    await fetch(serverBase + '/streamStatus')
       .then(res => res.json())
       .then(data => streamStatus = data)
   }
+
+  // Attach visibility listener
+  if (typeof document !== 'undefined') {
+    document.addEventListener('visibilitychange', handleVisibility);
+  }
+
+  onDestroy(() => {
+    try { if (atemWebSocket) atemWebSocket.close(); } catch (e) {}
+    if (typeof document !== 'undefined') {
+      document.removeEventListener('visibilitychange', handleVisibility);
+    }
+    if (statusTimeoutId) clearTimeout(statusTimeoutId);
+    if (screenshotTimeoutId) clearTimeout(screenshotTimeoutId);
+  });
 
   function calculatePreviewClass() {
     presetChunks = 0;
@@ -802,3 +892,6 @@
     </a>
   </div>
 </nav>
+{#if toast}
+  <div class="toast">{toast}</div>
+{/if}
