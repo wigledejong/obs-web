@@ -922,77 +922,81 @@
       </div>
   </div>
 </section>
-<nav class="navbar is-info is-fixed-bottom" aria-label="main navigation">
-  <div class="navbar-item">
-    <!-- svelte-ignore a11y-missing-attribute -->
-    <a class:is-danger={isMutedPC} class:is-primary={!isMutedPC} class="button" on:click={toggleMutePC} on:keypress={toggleMutePC} title="Toggle Mute PC">
-      <span class="icon">
-        {#if isMutedPC}
-        <Icon path={mdiHeadphonesOff} />
-        {:else}
-        <Icon path={mdiHeadphones} />
-        {/if}
-      </span>
-    </a>
-  </div>
-  <div class="navbar-item">
-    <!-- svelte-ignore a11y-missing-attribute -->
-    <a class:is-danger={isPipUit} class:is-primary={!isPipUit} class="button" on:click={togglePip} on:keypress={togglePip} title="Toggle Mute PC">
-      <span class="icon">
-        <Icon path={mdiPictureInPictureTopRight} />
-      </span>
-    </a>
-  </div>
-  <div class="navbar-item">
-    <!-- svelte-ignore a11y-missing-attribute -->
-    <a class:is-dark={!isRecordAan} class:is-danger={isRecordAan} class="button" disabled={streaming || null} on:click={toggleRecord} on:keypress={toggleRecord} title="Toggle Record Mode">
-      <span class="icon">
-        <Icon path={mdiRecordRec} />
-      </span>
-    </a>
-  </div>
-
-  <div class="navbar-start is-justify-content-center is-flex-grow-1">
+<nav class="navbar is-info is-fixed-bottom mobile-footer" aria-label="main navigation">
+   <div class="navbar-start">
+     <div class="navbar-item">
+      <!-- svelte-ignore a11y-missing-attribute -->
+      <a class:is-danger={isMutedPC} class:is-primary={!isMutedPC} class="button" on:click={toggleMutePC} on:keypress={toggleMutePC} title="Toggle Mute PC">
+        <span class="icon">
+          {#if isMutedPC}
+          <Icon path={mdiHeadphonesOff} />
+          {:else}
+          <Icon path={mdiHeadphones} />
+          {/if}
+        </span>
+      </a>
+    </div>
     <div class="navbar-item">
       <!-- svelte-ignore a11y-missing-attribute -->
-      <a class:is-danger={isMuted} class:is-primary={!isMuted} class="button" on:click={toggleMute} on:keypress={toggleMute} title="Toggle Mute Audio Systeem">
-          <span class="icon">
-            {#if isMuted}
-              <Icon path={mdiMicrophoneOff} />
-            {:else}
-              <Icon path={mdiMicrophone} />
-            {/if}
-          </span>
+      <a class:is-danger={isPipUit} class:is-primary={!isPipUit} class="button" on:click={togglePip} on:keypress={togglePip} title="Toggle Picture in Picture">
+        <span class="icon">
+          <Icon path={mdiPictureInPictureTopRight} />
+        </span>
+      </a>
+    </div>
+    <div class="navbar-item">
+      <!-- svelte-ignore a11y-missing-attribute -->
+      <a class:is-dark={!isRecordAan} class:is-danger={isRecordAan} class="button" disabled={streaming || null} on:click={toggleRecord} on:keypress={toggleRecord} title="Toggle Record Mode">
+        <span class="icon">
+          <Icon path={mdiRecordRec} />
+        </span>
       </a>
     </div>
   </div>
-  {#if cameraError}
-  <div class="navbar-item">
-    Een van de camara's is niet bereikbaar
-  </div>
-  {/if} 
-  <div class="navbar-item">
-    <!-- svelte-ignore a11y-missing-attribute -->
-    <a class:is-danger={!cameraOn} class:is-primary={cameraOn && !cameraError} class:is-warning={cameraError} class="button" on:click={changePowerModeCameras} on:keypress={changePowerModeCameras} title="Toggle Camera">
-      <span class="icon">
-          {#if cameraOn}
-            <Icon path={mdiCamera} />
-          {:else}
-            <Icon path={mdiCameraOff} />
-          {/if}
-        </span>
-    </a>
-  </div>
-  <div class="navbar-item">
-    <a class="button is-light" href="/admin.html" target="_blank" title="Open Admin Panel">
-      <span class="icon">
-        <Icon path={mdiCog} />
-      </span>
-      <span>
-        Admin
-      </span>
-    </a>
-  </div>
+
+   <div class="navbar-center">
+    <div class="navbar-item">
+        <!-- svelte-ignore a11y-missing-attribute -->
+        <a class:is-danger={isMuted} class:is-primary={!isMuted} class="button" on:click={toggleMute} on:keypress={toggleMute} title="Toggle Mute Audio System">
+            <span class="icon">
+              {#if isMuted}
+                <Icon path={mdiMicrophoneOff} />
+              {:else}
+                <Icon path={mdiMicrophone} />
+              {/if}
+            </span>
+        </a>
+      </div>
+    </div>
+    <div class="navbar-end">
+      {#if cameraError}
+      <div class="navbar-item is-hidden-mobile">
+        <span class="has-text-warning">Camera error</span>
+      </div>
+      {/if} 
+      <div class="navbar-item">
+        <!-- svelte-ignore a11y-missing-attribute -->
+        <a class:is-danger={!cameraOn} class:is-primary={cameraOn && !cameraError} class:is-warning={cameraError} class="button" on:click={changePowerModeCameras} on:keypress={changePowerModeCameras} title="Toggle Camera">
+          <span class="icon">
+              {#if cameraOn}
+                <Icon path={mdiCamera} />
+              {:else}
+                <Icon path={mdiCameraOff} />
+              {/if}
+            </span>
+        </a>
+      </div>
+      <div class="navbar-item hide-admin-mobile">
+        <a class="button is-light" href="/admin.html" target="_blank" title="Open Admin Panel">
+          <span class="icon">
+            <Icon path={mdiCog} />
+          </span>
+          <span>
+            Admin
+          </span>
+        </a>
+      </div>
+    </div>
 </nav>
 {#if toast}
   <div class="toast">{toast}</div>

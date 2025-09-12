@@ -159,3 +159,58 @@ $width-preview: 65vh;
   pointer-events: none;
 }
 
+/* Mobile footer improvements */
+.mobile-footer .navbar-menu {
+  padding: 0.2rem;
+}
+
+@media screen and (max-width: 1200px) {
+  .mobile-footer .navbar-brand {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.2rem;
+    flex-wrap: wrap;
+  }
+   
+  .mobile-footer .navbar-start,
+  .mobile-footer .navbar-end {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.2rem;
+  }
+  
+  .mobile-footer .navbar-item {
+    padding: 0.25rem;
+  }
+  
+  .mobile-footer .button {
+    min-width: 2.5rem;
+    height: 2.5rem;
+  }
+}
+
+/* Hide admin button on mobile and tablet */
+.hide-admin-mobile {
+  display: none !important;
+}
+
+@media screen and (min-width: 1200px) {
+  .hide-admin-mobile {
+    display: block !important;
+  }
+}
+
+/* Ensure proper alignment on tablet and desktop */
+@media screen and (min-width: 768px) {
+  .mobile-footer .navbar-end {
+    margin-left: auto;
+    justify-content: flex-end;
+  }
+  
+  .mobile-footer .navbar-item.is-hidden-mobile {
+    display: flex !important;
+  }
+}
+
