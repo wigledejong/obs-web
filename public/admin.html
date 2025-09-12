@@ -328,7 +328,10 @@
         state.cameras = newCameras;
 
         // presets
-        const newPresets = {};
+        // Preserve existing presets data to avoid losing filtered items
+        const newPresets = { ...state.presets };
+        
+        // Update only the presets that are currently visible in the DOM
         Array.from(presetRows.querySelectorAll('tr')).forEach(tr => {
           const name = tr.querySelector('[data-field="name"]').value.trim();
           if (!name) return;
@@ -344,12 +347,25 @@
         // variants + presetUitzending
         const variants = Array.from(variantSelect.options).map(o => o.value);
         state.uitzendingVariant = variants;
-        const map = {};
-        variants.forEach(v => {
-          map[v] = Array.from(document.querySelectorAll(`[data-variant="${cssEscape(v)}"]`))
+        
+        // Preserve existing presetUitzending data for all variants
+        const map = state.presetUitzending || {};
+        
+        // Only update the currently selected variant from DOM
+        const currentVariant = variantSelect.value;
+        if (currentVariant) {
+          map[currentVariant] = Array.from(document.querySelectorAll(`[data-variant="${cssEscape(currentVariant)}"]`))
             .sort((a,b) => parseInt(a.dataset.index) - parseInt(b.dataset.index))
             .map(row => row.querySelector('[data-field="vp_name"]').textContent);
+        }
+        
+        // Ensure all variants exist in the map (even if empty)
+        variants.forEach(v => {
+          if (!map[v]) {
+            map[v] = [];
+          }
         });
+        
         state.presetUitzending = map;
 
         // profiles
@@ -381,7 +397,13 @@
           <td style="text-align:center"><input data-field="ptz" type="checkbox" ${c.ptz?'checked':''} /></td>
           <td><button data-action="remove">Remove</button></td>
         `;
-        tr.querySelector('[data-action="remove"]').addEventListener('click', () => tr.remove());
+        tr.querySelector('[data-action="remove"]').addEventListener('click', () => {
+          const cameraKey = tr.querySelector('[data-field="key"]').value.trim();
+          if (cameraKey && state.cameras) {
+            delete state.cameras[cameraKey];
+          }
+          tr.remove();
+        });
         cameraRows.appendChild(tr);
       }
 
@@ -402,7 +424,13 @@
           <td><input data-field="preset" type="text" value="${escapeHtml(p.preset||'')}" /></td>
           <td><button data-action="remove">Remove</button></td>
         `;
-        tr.querySelector('[data-action="remove"]').addEventListener('click', () => tr.remove());
+        tr.querySelector('[data-action="remove"]').addEventListener('click', () => {
+          const presetName = tr.querySelector('[data-field="name"]').value.trim();
+          if (presetName && state.presets) {
+            delete state.presets[presetName];
+          }
+          tr.remove();
+        });
         presetRows.appendChild(tr);
       }
 
@@ -464,6 +492,8 @@
         const tmp = list[index];
         list[index] = list[ni];
         list[ni] = tmp;
+        // Update the state immediately
+        state.presetUitzending[variant] = list;
         renderVariantPresets();
       }
 
