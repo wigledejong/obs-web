@@ -11,6 +11,7 @@ import json from '@rollup/plugin-json';
 
 
 const production = !process.env.ROLLUP_WATCH;
+const testMode = process.env.TEST_MODE === 'true';
 const version = String(require('child_process').execSync('git rev-parse --short HEAD')).trim(); // append short git commit to bundles
 
 export default {
@@ -105,7 +106,8 @@ function serve() {
       if (!started) {
         started = true;
 
-        require('child_process').spawn('npm', ['run', 'start', '--', '--dev'], {
+        const startCommand = testMode ? 'node src/server.js --test' : 'npm run start -- --dev';
+        require('child_process').spawn(startCommand, [], {
           stdio: ['ignore', 'inherit', 'inherit'],
           shell: true
         });

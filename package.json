@@ -2,8 +2,9 @@
   "name": "svelte-app",
   "version": "1.0.0",
   "scripts": {
-    "build": "rollup -c 2>/dev/null || rollup -c",
+    "build": "rollup -c",
     "dev": "rollup -c -w",
+    "dev:test": "rollup -c -w --environment TEST_MODE:true",
     "start": "concurrently --kill-others \"npm run obsStart\" \"npm run atemServer\"",
     "obsStart": "sirv public --host",
     "atemServer": "node src/server.js"
